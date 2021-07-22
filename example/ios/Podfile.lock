@@ -1,35 +1,42 @@
 PODS:
-  - CleverTap-iOS-SDK (3.9.1):
+  - CleverTap-iOS-SDK (3.9.2x):
     - SDWebImage (~> 5.1)
   - clevertap_plugin (1.2.0):
-    - CleverTap-iOS-SDK (~> 3.9.1)
+    - CleverTap-iOS-SDK (~> 3.9.2x)
     - Flutter
   - Flutter (1.0.0)
-  - SDWebImage (5.9.2):
-    - SDWebImage/Core (= 5.9.2)
-  - SDWebImage/Core (5.9.2)
+  - SDWebImage (5.11.1):
+    - SDWebImage/Core (= 5.11.1)
+  - SDWebImage/Core (5.11.1)
 
 DEPENDENCIES:
+  - CleverTap-iOS-SDK (from `https://github.com/nurture-farm/clevertap-ios-sdk.git`)
   - clevertap_plugin (from `.symlinks/plugins/clevertap_plugin/ios`)
   - Flutter (from `Flutter`)
 
 SPEC REPOS:
   trunk:
-    - CleverTap-iOS-SDK
     - SDWebImage
 
 EXTERNAL SOURCES:
+  CleverTap-iOS-SDK:
+    :git: https://github.com/nurture-farm/clevertap-ios-sdk.git
   clevertap_plugin:
     :path: ".symlinks/plugins/clevertap_plugin/ios"
   Flutter:
     :path: Flutter
 
+CHECKOUT OPTIONS:
+  CleverTap-iOS-SDK:
+    :commit: 1c5761ae34479948bc6054d9476768ba805f1ee3
+    :git: https://github.com/nurture-farm/clevertap-ios-sdk.git
+
 SPEC CHECKSUMS:
-  CleverTap-iOS-SDK: 37872a91bdac5da30e7d268c7f571ae894be4298
-  clevertap_plugin: 45564e7945713b8a93a127cef89c616e3eb95bbe
+  CleverTap-iOS-SDK: b0b06716c6c1b6fd667b0e2ab2747850255e072c
+  clevertap_plugin: 68a40208356888b64f55a65f9ee4435b199dbcd4
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
-  SDWebImage: 0b42b8719ab0c5257177d5894306e8a336b21cbb
+  SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
 
-PODFILE CHECKSUM: 46404600c30bd58802571e41f68372a2eb5dbcb6
+PODFILE CHECKSUM: 6d2d052d5dbc251c2d8e8fae915466d1a0708f75
 
-COCOAPODS: 1.9.3
+COCOAPODS: 1.10.0
