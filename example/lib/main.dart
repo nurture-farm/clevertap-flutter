@@ -1196,10 +1196,11 @@ class _MyAppState extends State<MyApp> {
     var stuff = ["bags", "shoes"];
     var profile = {
       'Name': 'Captain America',
-      'Identity': '100',
+      'Identity': '12345',
       'Email': 'captain@america.com',
       'Phone': '+14155551234',
-      'stuff': stuff
+      'stuff': stuff,
+      "userType": "FARMER"
     };
     CleverTapPlugin.onUserLogin(profile);
     showToast("onUserLogin called, check console for details");
