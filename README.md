@@ -53,8 +53,8 @@ Add the following to your `dependencies` section in `app/build.gradle`
         implementation 'com.google.android.material:material:1.2.1'
         implementation 'com.github.bumptech.glide:glide:4.11.0'
         
-        //For CleverTap Android SDK v3.6.4 and above add the following -
-        implementation 'com.android.installreferrer:installreferrer:2.1'
+        //For CleverTap Android SDK v4.0.2 and above add the following -
+        implementation 'com.android.installreferrer:installreferrer:2.2'
         
         //Optional ExoPlayer Libraries for Audio/Video Inbox Messages. Audio/Video messages will be dropped without these dependencies
         implementation 'com.google.android.exoplayer:exoplayer:2.11.5'
