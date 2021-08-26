@@ -1,8 +1,8 @@
 PODS:
-  - CleverTap-iOS-SDK (3.9.2x):
+  - CleverTap-iOS-SDK (3.9.4):
     - SDWebImage (~> 5.1)
-  - clevertap_plugin (1.2.0):
-    - CleverTap-iOS-SDK (~> 3.9.2x)
+  - clevertap_plugin (1.2.3):
+    - CleverTap-iOS-SDK (= 3.9.4)
     - Flutter
   - Flutter (1.0.0)
   - SDWebImage (5.11.1):
