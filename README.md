@@ -1,9 +1,12 @@
 <p align="center">
-  <img src="https://github.com/CleverTap/clevertap-flutter/blob/master/clevertap-logo.png" width="300"/>
+  <img src="https://github.com/CleverTap/clevertap-ios-sdk/blob/master/docs/images/clevertap-logo.png" width = "50%"/>
 </p>
 
 # CleverTap Flutter SDK
 [![pub package](https://img.shields.io/pub/v/clevertap_plugin.svg)](https://pub.dartlang.org/packages/clevertap_plugin)
+<a href="https://github.com/CleverTap/clevertap-flutter/releases">
+    <img src="https://img.shields.io/github/release/CleverTap/clevertap-flutter.svg" />
+</a>
 
 ## 👋 Introduction
 The CleverTap Flutter SDK for Mobile Customer Engagement and Analytics solutions.
@@ -18,7 +21,7 @@ To get started, sign up [here](https://clevertap.com/live-product-demo/)
 
 ```yaml
 dependencies:
-clevertap_plugin: 1.2.0
+clevertap_plugin: 1.2.3
 ```
 
 - Run `flutter packages get` to install the SDK
@@ -29,16 +32,12 @@ clevertap_plugin: 1.2.0
 import 'package:clevertap_plugin/clevertap_plugin.dart';
 ```
 
-## 👨‍💻 Android
+See our [Technical Documentation for Android](doc/Integrate-Android.md) and [Technical Documentation for iOS](doc/Integrate-iOS.md) for instructions on integrating CleverTap into your Flutter app.
 
-Add the following to your `dependencies` section in `project/build.gradle`
+## 📑 Documentation & Example
 
-```groovy
-    dependencies {
-            classpath 'com.android.tools.build:gradle:4.0.1'
-            classpath 'com.google.gms:google-services:4.3.3' //<--- Mandatory for using Firebase Messaging, skip if not using FCM
-        }
-```
+- Checkout our [CleverTap Flutter Usage docs](doc/Usage.md)
+- Checkout our [Example Dart project](/example)
 
 Add the following to your `dependencies` section in `app/build.gradle`
 ```groovy
@@ -155,7 +154,7 @@ After installation, you will need to integrate CleverTap SDK into your app.
 
 ## 🆕 Changelog
 
-Refer to the [CleverTap Flutter SDK Change Log](https://github.com/CleverTap/clevertap-flutter/blob/master/CHANGELOG.md).
+Refer to the [CleverTap Flutter SDK Change Log](/CHANGELOG.md).
 
 ## ❓Questions
 
