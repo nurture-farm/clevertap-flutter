@@ -3,10 +3,10 @@ package com.clevertap.clevertap_plugin;
 import android.os.Bundle;
 import android.util.Log;
 import com.clevertap.android.sdk.CTInboxStyleConfig;
+import com.clevertap.android.sdk.EventDetail;
 import com.clevertap.android.sdk.UTMDetail;
 import com.clevertap.android.sdk.displayunits.model.CleverTapDisplayUnit;
-import com.clevertap.android.sdk.events.EventDetail;
-import com.clevertap.android.sdk.inbox.CTInboxMessage;
+import com.clevertap.android.sdk.CTInboxMessage;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -189,7 +189,7 @@ public class Utils {
                 }
                 if ("firstTabTitle".equals(styleConfigKey)) {
                     String firstTabTitle = styleConfigJson.getString(styleConfigKey);
-                    styleConfig.setFirstTabTitle(firstTabTitle);
+//                    styleConfig.setNavBarTitle(firstTabTitle);
                 }
                 if ("tabs".equals(styleConfigKey)) {
                     try {
