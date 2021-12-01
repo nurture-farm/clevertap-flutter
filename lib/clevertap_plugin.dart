@@ -738,4 +738,10 @@ class CleverTapPlugin {
   static String getCleverTapDate(DateTime dateTime) {
     return '\$D_' + dateTime.millisecondsSinceEpoch.toString();
   }
+
+  ///Logout's user and removed all cached profile data.
+  static Future<void> performLogout() async {
+    return await _channel.invokeMethod('performLogout');
+  }
+
 }

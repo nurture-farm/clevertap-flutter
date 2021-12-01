@@ -751,6 +751,17 @@ class _MyAppState extends State<MyApp> {
                     ),
                   ),
                 ),
+                Card(
+                  color: Colors.grey.shade300,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: ListTile(
+                      title: Text("Logout user"),
+                      subtitle: Text("Logout's user and removed all cached profile data."),
+                      onTap: logout,
+                    ),
+                  ),
+                ),
               ],
             )),
       ),
@@ -1003,6 +1014,10 @@ class _MyAppState extends State<MyApp> {
       offLine = true;
       showToast("You are offline");
     }
+  }
+
+  void logout() {
+    CleverTapPlugin.performLogout();
   }
 
   void setEnableDeviceNetworkingInfo() {
