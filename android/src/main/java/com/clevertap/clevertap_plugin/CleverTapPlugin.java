@@ -534,7 +534,10 @@ public class CleverTapPlugin implements ActivityAware,
                 Log.d(TAG, "getInitialUrl" + ERROR_IOS);
                 break;
             }
-
+            case "performLogout": {
+                resetUser();
+                break;
+            }
             default: {
                 result.notImplemented();
             }
@@ -1352,5 +1355,9 @@ public class CleverTapPlugin implements ActivityAware,
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
+    }
+
+    private void resetUser() {
+        cleverTapAPI.resetUser();
     }
 }
