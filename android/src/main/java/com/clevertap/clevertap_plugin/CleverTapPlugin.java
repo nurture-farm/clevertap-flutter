@@ -10,10 +10,13 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import com.clevertap.android.sdk.CTExperimentsListener;
 import com.clevertap.android.sdk.CTFeatureFlagsListener;
 import com.clevertap.android.sdk.CTInboxListener;
+import com.clevertap.android.sdk.CTInboxMessage;
 import com.clevertap.android.sdk.CTInboxStyleConfig;
 import com.clevertap.android.sdk.CleverTapAPI;
+import com.clevertap.android.sdk.EventDetail;
 import com.clevertap.android.sdk.InAppNotificationButtonListener;
 import com.clevertap.android.sdk.InAppNotificationListener;
 import com.clevertap.android.sdk.InboxMessageButtonListener;
@@ -21,20 +24,10 @@ import com.clevertap.android.sdk.SyncListener;
 import com.clevertap.android.sdk.UTMDetail;
 import com.clevertap.android.sdk.displayunits.DisplayUnitListener;
 import com.clevertap.android.sdk.displayunits.model.CleverTapDisplayUnit;
-import com.clevertap.android.sdk.events.EventDetail;
-import com.clevertap.android.sdk.inbox.CTInboxMessage;
 import com.clevertap.android.sdk.product_config.CTProductConfigListener;
 import com.clevertap.android.sdk.pushnotification.CTPushNotificationListener;
 import com.clevertap.android.sdk.pushnotification.PushConstants.PushType;
 import com.clevertap.android.sdk.pushnotification.amp.CTPushAmpListener;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -44,6 +37,12 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * CleverTapPlugin
