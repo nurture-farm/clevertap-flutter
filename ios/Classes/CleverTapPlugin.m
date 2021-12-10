@@ -88,6 +88,8 @@ static NSDateFormatter *dateFormatter;
         [self showInbox:call withResult:result];
     else if ([@"onUserLogin" isEqualToString:call.method])
         [self onUserLogin:call withResult:result];
+    else if ([@"performLogout" isEqualToString:call.method])
+        [self performLogout:call withResult:result];
     else if ([@"setPushToken" isEqualToString:call.method])
         [self setPushTokenAsString:call withResult:result];
     else if ([@"registerForPush" isEqualToString:call.method])
@@ -317,6 +319,12 @@ static NSDateFormatter *dateFormatter;
 - (void)onUserLogin:(FlutterMethodCall *)call withResult:(FlutterResult)result {
     
     [[CleverTap sharedInstance] onUserLogin:call.arguments[@"profile"]];
+    result(nil);
+}
+
+- (void)performLogout:(FlutterMethodCall *)call withResult:(FlutterResult)result {
+
+    [[CleverTap sharedInstance] resetUser];
     result(nil);
 }
 
