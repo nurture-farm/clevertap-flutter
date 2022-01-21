@@ -897,6 +897,10 @@ public class CleverTapPlugin implements ActivityAware,
 
     private void invokeMethodOnUiThread(final String methodName, final String cleverTapID) {
         final MethodChannel channel = this.channel;
+        if (channel == null) {
+            Log.d(TAG, "methodChannel in invokeMethodOnUiThread(String) is null");
+            return;
+        }
         runOnMainThread(() -> {
             if (!cleverTapID.isEmpty()) {
                 channel.invokeMethod(methodName, cleverTapID);
@@ -909,7 +913,7 @@ public class CleverTapPlugin implements ActivityAware,
     private void invokeMethodOnUiThread(final String methodName, final Map map) {
         final MethodChannel channel = this.channel;
         if (channel == null) {
-            Log.d(TAG, "methodChannel is null");
+            Log.d(TAG, "methodChannel in invokeMethodOnUiThread(Map) is null");
             return;
         }
         runOnMainThread(() -> channel.invokeMethod(methodName, map));
@@ -918,6 +922,10 @@ public class CleverTapPlugin implements ActivityAware,
     @SuppressWarnings("SameParameterValue")
     private void invokeMethodOnUiThread(final String methodName, final ArrayList list) {
         final MethodChannel channel = this.channel;
+        if (channel == null) {
+            Log.d(TAG, "methodChannel in invokeMethodOnUiThread(ArrayList) is null");
+            return;
+        }
         runOnMainThread(() -> channel.invokeMethod(methodName, list));
     }
 
