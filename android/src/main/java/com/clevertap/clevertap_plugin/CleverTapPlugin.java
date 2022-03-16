@@ -338,6 +338,10 @@ public class CleverTapPlugin implements ActivityAware,
                 profileSet(call, result);
                 break;
             }
+            case "setProxy": {
+                setProxy(call, result);
+                break;
+            }
             case "profileGetProperty": {
                 profileGetProperty(call, result);
                 break;
@@ -1059,6 +1063,12 @@ public class CleverTapPlugin implements ActivityAware,
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
+    }
+
+    private void setProxy(MethodCall call, Result result) {
+        String proxyUrl = call.argument("proxyUrl");
+        cleverTapAPI.setProxyUrl(proxyUrl);
+        result.success(null);
     }
 
     private void profileSetMultiValues(MethodCall call, Result result) {
