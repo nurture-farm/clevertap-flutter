@@ -474,10 +474,6 @@ class CleverTapPlugin {
     return await _channel.invokeMethod('profileSet', {'profile': profile});
   }
 
-  static Future<void> setProxyUrl(String? proxyUrl) async {
-    return await _channel.invokeMethod('setProxy', {'proxyUrl': proxyUrl});
-  }
-
   ///Remove the user profile property value specified by key from the user profile
   static Future<void> profileRemoveValueForKey(String key) async {
     return await _channel
