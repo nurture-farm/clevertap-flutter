@@ -16,6 +16,7 @@ import com.clevertap.android.sdk.CTInboxListener;
 import com.clevertap.android.sdk.CTInboxMessage;
 import com.clevertap.android.sdk.CTInboxStyleConfig;
 import com.clevertap.android.sdk.CleverTapAPI;
+import com.clevertap.android.sdk.CTEventNotifier;
 import com.clevertap.android.sdk.EventDetail;
 import com.clevertap.android.sdk.InAppNotificationButtonListener;
 import com.clevertap.android.sdk.InAppNotificationListener;
@@ -535,7 +536,7 @@ public class CleverTapPlugin implements ActivityAware,
                 break;
             }
             case "performLogout": {
-                resetUser();
+                resetUser(result);
                 break;
             }
             default: {
@@ -1365,7 +1366,16 @@ public class CleverTapPlugin implements ActivityAware,
         }
     }
 
-    private void resetUser() {
-        cleverTapAPI.resetUser();
+    private void resetUser(Result result) {
+        cleverTapAPI.resetUser(new CTEventNotifier(){
+            @Override
+            public void onEventComplete(){
+                result.success(null);
+            }
+            @Override
+            public void onEventCompleteWithError(Throwable e){}{
+                result.error(TAG, "", null);
+            }
+        });
     }
 }
