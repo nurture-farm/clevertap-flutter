@@ -1372,6 +1372,10 @@ public class CleverTapPlugin implements ActivityAware,
             public void onEventComplete(){
                 result.success(null);
             }
+            @Override
+            public void onEventCompleteWithError(Throwable e){}{
+                result.error(TAG, "", null);
+            }
         });
     }
 }
