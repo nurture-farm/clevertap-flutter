@@ -1373,7 +1373,7 @@ public class CleverTapPlugin implements ActivityAware,
                 result.success(null);
             }
             @Override
-            public void onEventCompleteWithError(Throwable e){}{
+            public void onEventCompleteWithError(Throwable e){
                 result.error(TAG, "", null);
             }
         });
