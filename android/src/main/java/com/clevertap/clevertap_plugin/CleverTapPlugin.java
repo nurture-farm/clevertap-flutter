@@ -279,6 +279,12 @@ public class CleverTapPlugin implements ActivityAware,
                 setPersonalization(result, false);
                 break;
             }
+
+            case "setCommonEventData": {
+                setCommonEventData(call, result);
+                break;
+            }
+
             // Event API
             case "recordScreenView": {
                 recordScreenView(call, result);
@@ -288,6 +294,7 @@ public class CleverTapPlugin implements ActivityAware,
                 recordEvent(call, result);
                 break;
             }
+
             case "recordChargedEvent": {
                 recordChargedEvent(call, result);
                 break;
@@ -1267,6 +1274,12 @@ public class CleverTapPlugin implements ActivityAware,
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
+    }
+
+    private void setCommonEventData(MethodCall call, Result result) {
+        Map<String, Object> eventData = call.argument("eventData");
+        this.cleverTapAPI.setCommonEventData(eventData);
+        result.success(null);
     }
 
     private void recordScreenView(MethodCall call, Result result) {

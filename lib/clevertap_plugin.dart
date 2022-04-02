@@ -372,6 +372,13 @@ class CleverTapPlugin {
         'recordEvent', {'eventName': eventName, 'eventData': properties});
   }
 
+  /// Sets common Event Data
+  static Future<void> setCommonEventData(
+      String eventName, Map<String, dynamic> properties) async {
+    return await _channel.invokeMethod(
+        'setCommonEventData', {'eventData': properties});
+  }
+
   ///**
   /// * Push Charged event, which describes a purchase made.
   /// *
@@ -787,4 +794,10 @@ class CleverTapPlugin {
   static String getCleverTapDate(DateTime dateTime) {
     return '\$D_' + dateTime.millisecondsSinceEpoch.toString();
   }
+
+  ///Logout's user and removed all cached profile data.
+  static Future<void> performLogout() async {
+    return await _channel.invokeMethod('performLogout');
+  }
+
 }

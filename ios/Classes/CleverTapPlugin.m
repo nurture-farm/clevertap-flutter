@@ -75,6 +75,8 @@ static NSDateFormatter *dateFormatter;
     
     if ([@"getPlatformVersion" isEqualToString:call.method])
         result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
+    else if ([@"setCommonEventData" isEqualToString:call.method])
+        [self setCommonEventData:call withResult:result];
     else if ([@"recordEvent" isEqualToString:call.method])
         [self recordEvent:call withResult:result];
     else if ([@"setDebugLevel" isEqualToString:call.method])
@@ -179,6 +181,8 @@ static NSDateFormatter *dateFormatter;
         [self pushInboxNotificationViewedEventForId:call withResult:result];
     else if ([@"getInitialUrl" isEqualToString:call.method])
         [self getInitialUrl:call result:result];
+    else if ([@"performLogout" isEqualToString:call.method])
+        [self resetUser:result];
     else if ([@"getAllDisplayUnits" isEqualToString:call.method])
         [self getAllDisplayUnits:call withResult:result];
     else if ([@"getDisplayUnitForId" isEqualToString:call.method])
@@ -246,6 +250,16 @@ static NSDateFormatter *dateFormatter;
     }
 }
 
+
+- (void)resetUser:(FlutterResult)result {
+    
+    [[CleverTap sharedInstance] resetUser:^{
+        result(nil);
+    } onFailure: ^(NSError *error){
+        result([FlutterError errorWithCode:@"Error" message:@"" details:nil]);
+    }];
+}
+
 - (void)setDebugLog:(FlutterMethodCall *)call withResult:(FlutterResult)result {
     
     [CleverTap setDebugLevel:[call.arguments[@"debugLevel"] intValue]];
@@ -306,6 +320,12 @@ static NSDateFormatter *dateFormatter;
 - (void)recordEvent:(FlutterMethodCall *)call withResult:(FlutterResult)result {
     
     [[CleverTap sharedInstance] recordEvent:call.arguments[@"eventName"] withProps:call.arguments[@"eventData"]];
+    result(nil);
+}
+
+- (void)setCommonEventData:(FlutterMethodCall *)call withResult:(FlutterResult)result {
+    
+    [[CleverTap sharedInstance] setCommonEventData:call.arguments[@"eventData"]];
     result(nil);
 }
 
