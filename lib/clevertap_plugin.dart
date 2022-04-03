@@ -373,10 +373,8 @@ class CleverTapPlugin {
   }
 
   /// Sets common Event Data
-  static Future<void> setCommonEventData(
-      String eventName, Map<String, dynamic> properties) async {
-    return await _channel.invokeMethod(
-        'setCommonEventData', {'eventData': properties});
+  static Future<void> setCommonEventData(Map<String, dynamic> properties) async {
+    return await _channel.invokeMethod('setCommonEventData', {'eventData': properties});
   }
 
   ///**
