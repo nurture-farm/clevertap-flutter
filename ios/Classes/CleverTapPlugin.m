@@ -262,7 +262,7 @@ static NSDateFormatter *dateFormatter;
     }];
 }
 
-- (void) deferEventsUntilProfileAndDeviceIsLoaded:(FlutterMethodCall*)call result:(FlutterResult)result {
+- (void) deferEventsUntilProfileAndDeviceIsLoaded:(FlutterMethodCall*)call withResult:(FlutterResult)result {
 
     [[CleverTap sharedInstance] deferClevertapEventsUntilProfileAndDeviceIsFetched:[call.arguments[@"value"] boolValue]];
     result(nil);
