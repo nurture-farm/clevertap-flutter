@@ -29,6 +29,7 @@ import com.clevertap.android.sdk.product_config.CTProductConfigListener;
 import com.clevertap.android.sdk.pushnotification.CTPushNotificationListener;
 import com.clevertap.android.sdk.pushnotification.PushConstants.PushType;
 import com.clevertap.android.sdk.pushnotification.amp.CTPushAmpListener;
+import com.clevertap.android.sdk.CTEventNotifier;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -279,6 +280,12 @@ public class CleverTapPlugin implements ActivityAware,
                 setPersonalization(result, false);
                 break;
             }
+
+            case "setCommonEventData": {
+                setCommonEventData(call, result);
+                break;
+            }
+
             // Event API
             case "recordScreenView": {
                 recordScreenView(call, result);
@@ -288,6 +295,7 @@ public class CleverTapPlugin implements ActivityAware,
                 recordEvent(call, result);
                 break;
             }
+
             case "recordChargedEvent": {
                 recordChargedEvent(call, result);
                 break;
@@ -560,6 +568,16 @@ public class CleverTapPlugin implements ActivityAware,
 
             case "getInitialUrl": {
                 Log.d(TAG, "getInitialUrl" + ERROR_IOS);
+                break;
+            }
+
+            case "performLogout": {
+                resetUser(result);
+                break;
+            }
+
+            case "deferEventsUntilProfileAndDeviceIsLoaded": {
+                deferEventsUntilProfileAndDeviceIsLoaded(call, result);
                 break;
             }
 
@@ -1269,6 +1287,12 @@ public class CleverTapPlugin implements ActivityAware,
         }
     }
 
+    private void setCommonEventData(MethodCall call, Result result) {
+        Map<String, Object> eventData = call.argument("eventData");
+        this.cleverTapAPI.setCommonEventData(eventData);
+        result.success(null);
+    }
+
     private void recordScreenView(MethodCall call, Result result) {
         String name = call.argument("screenName");
         if (isCleverTapNotNull(cleverTapAPI)) {
@@ -1465,4 +1489,24 @@ public class CleverTapPlugin implements ActivityAware,
             result.error(TAG, ERROR_MSG, null);
         }
     }
+
+    private void resetUser(Result result) {
+        cleverTapAPI.resetUser(new CTEventNotifier(){
+            @Override
+            public void onEventComplete(){
+                result.success(null);
+            }
+            @Override
+            public void onEventCompleteWithError(Throwable e){
+                result.error(TAG, "", null);
+            }
+        });
+    }
+
+    private void deferEventsUntilProfileAndDeviceIsLoaded(MethodCall call, Result result) {
+        boolean value = call.argument("value");
+        cleverTapAPI.deferClevertapEventsUntilProfileAndDeviceIsFetched(value);
+        result.success(null);
+    }
+
 }
