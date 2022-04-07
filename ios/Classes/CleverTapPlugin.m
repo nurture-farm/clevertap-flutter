@@ -183,6 +183,8 @@ static NSDateFormatter *dateFormatter;
         [self getInitialUrl:call result:result];
     else if ([@"performLogout" isEqualToString:call.method])
         [self resetUser:result];
+    else if ([@"deferEventsUntilProfileAndDeviceIsLoaded" isEqualToString:call.method])
+        [self deferEventsUntilProfileAndDeviceIsLoaded:call withResult:result];
     else if ([@"getAllDisplayUnits" isEqualToString:call.method])
         [self getAllDisplayUnits:call withResult:result];
     else if ([@"getDisplayUnitForId" isEqualToString:call.method])
@@ -258,6 +260,12 @@ static NSDateFormatter *dateFormatter;
     } onFailure: ^(NSError *error){
         result([FlutterError errorWithCode:@"Error" message:@"" details:nil]);
     }];
+}
+
+- (void) deferEventsUntilProfileAndDeviceIsLoaded:(FlutterMethodCall*)call result:(FlutterResult)result {
+
+    [[CleverTap sharedInstance] deferClevertapEventsUntilProfileAndDeviceIsFetched:[call.arguments[@"value"] boolValue]];
+    result(nil);
 }
 
 - (void)setDebugLog:(FlutterMethodCall *)call withResult:(FlutterResult)result {

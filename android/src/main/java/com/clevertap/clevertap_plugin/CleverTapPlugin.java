@@ -576,6 +576,11 @@ public class CleverTapPlugin implements ActivityAware,
                 break;
             }
 
+            case "deferEventsUntilProfileAndDeviceIsLoaded": {
+                deferEventsUntilProfileAndDeviceIsLoaded(call, result);
+                break;
+            }
+
             default: {
                 result.notImplemented();
             }
@@ -1496,6 +1501,12 @@ public class CleverTapPlugin implements ActivityAware,
                 result.error(TAG, "", null);
             }
         });
+    }
+
+    private void deferEventsUntilProfileAndDeviceIsLoaded(MethodCall call, Result result) {
+        boolean value = call.argument("value");
+        cleverTapAPI.deferClevertapEventsUntilProfileAndDeviceIsFetched(value);
+        result.success(null);
     }
 
 }

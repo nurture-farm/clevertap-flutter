@@ -798,4 +798,8 @@ class CleverTapPlugin {
     return await _channel.invokeMethod('performLogout');
   }
 
+  static Future<void> deferEventsUntilProfileAndDeviceIsLoaded(bool value) async {
+    return await _channel.invokeMethod('deferEventsUntilProfileAndDeviceIsLoaded', {'value': value});
+  }
+
 }
