@@ -581,6 +581,11 @@ public class CleverTapPlugin implements ActivityAware,
                 break;
             }
 
+            case "setDeviceId": {
+                setDeviceId(call, result);
+                break;
+            }
+
             default: {
                 result.notImplemented();
             }
@@ -1506,6 +1511,14 @@ public class CleverTapPlugin implements ActivityAware,
     private void deferEventsUntilProfileAndDeviceIsLoaded(MethodCall call, Result result) {
         boolean value = call.argument("value");
         cleverTapAPI.deferClevertapEventsUntilProfileAndDeviceIsFetched(value);
+        result.success(null);
+    }
+
+    private void setDeviceId(MethodCall call, Result result) {
+        boolean trackingEnabled = call.argument("trackingEnabled");
+        String deviceId = call.argument("deviceId");
+        cleverTapAPI.setTrackingDeviceId(deviceId);
+        cleverTapAPI.setTrackingEnabled(trackingEnabled);
         result.success(null);
     }
 
