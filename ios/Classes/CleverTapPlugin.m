@@ -185,6 +185,8 @@ static NSDateFormatter *dateFormatter;
         [self resetUser:result];
     else if ([@"deferEventsUntilProfileAndDeviceIsLoaded" isEqualToString:call.method])
         [self deferEventsUntilProfileAndDeviceIsLoaded:call withResult:result];
+    else if ([@"setDeviceId" isEqualToString:call.method])
+        [self setDeviceId:call withResult:result];
     else if ([@"getAllDisplayUnits" isEqualToString:call.method])
         [self getAllDisplayUnits:call withResult:result];
     else if ([@"getDisplayUnitForId" isEqualToString:call.method])
@@ -273,6 +275,12 @@ static NSDateFormatter *dateFormatter;
 - (void) deferEventsUntilProfileAndDeviceIsLoaded:(FlutterMethodCall*)call withResult:(FlutterResult)result {
 
     [[CleverTap sharedInstance] deferClevertapEventsUntilProfileAndDeviceIsFetched:[call.arguments[@"value"] boolValue]];
+    result(nil);
+}
+
+- (void)setDeviceId:(FlutterMethodCall*)call withResult:(FlutterResult)result {
+    [[CleverTap sharedInstance] setTrackingDeviceId:call.arguments[@"deviceId"]];
+    [[CleverTap sharedInstance] setTrackingEnabled:[call.arguments[@"trackingEnabled"] boolValue]];
     result(nil);
 }
 
