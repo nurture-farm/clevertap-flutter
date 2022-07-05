@@ -802,4 +802,11 @@ class CleverTapPlugin {
     return await _channel.invokeMethod('deferEventsUntilProfileAndDeviceIsLoaded', {'value': value});
   }
 
+  static Future<void> setDeviceId(String deviceId,bool trackingEnabled) async {
+    return _channel.invokeMethod('setDeviceId', {
+      'deviceId': deviceId,
+      'trackingEnabled': trackingEnabled,
+    });
+  }
+
 }
