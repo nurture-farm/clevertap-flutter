@@ -1,5 +1,16 @@
 ## CHANGE LOG
 
+### Version 1.5.4 (November 4, 2022)
+* Supports [CleverTap iOS SDK v4.1.4](https://github.com/CleverTap/clevertap-ios-sdk/blob/master/CHANGELOG.md#version-414-october-24-2022)
+
+### Version 1.5.3 (October 28, 2022)
+* Fixes incorrect API being called in `profileAddMultiValues` in iOS.
+
+### Version 1.5.2 (October 7, 2022)
+* Supports [CleverTap Android SDK v4.6.3](https://github.com/CleverTap/clevertap-android-sdk/releases/tag/corev4.6.3)
+* [Breaking Change] `setXiaomiPushToken` API has been modified to accept region to comply with new Mi Push Region changes. Refer to [CleverTap Xiaomi Push SDK v1.5.0 Changelog](https://github.com/CleverTap/clevertap-android-sdk/blob/master/docs/CTXIAOMIPUSHCHANGELOG.md)
+* Supports [CleverTap iOS SDK v4.1.2](https://github.com/CleverTap/clevertap-ios-sdk/blob/master/CHANGELOG.md#version-412-september-16-2022)
+
 ### Version 1.5.1 (April 7, 2022)
 * Adds the missing getter methods for Product Config in iOS.
 

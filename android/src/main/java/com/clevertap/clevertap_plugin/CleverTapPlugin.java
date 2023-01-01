@@ -18,6 +18,7 @@ import com.clevertap.android.sdk.CleverTapAPI;
 import com.clevertap.android.sdk.InAppNotificationButtonListener;
 import com.clevertap.android.sdk.InAppNotificationListener;
 import com.clevertap.android.sdk.InboxMessageButtonListener;
+import com.clevertap.android.sdk.InboxMessageListener;
 import com.clevertap.android.sdk.SyncListener;
 import com.clevertap.android.sdk.UTMDetail;
 import com.clevertap.android.sdk.displayunits.DisplayUnitListener;
@@ -55,7 +56,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 public class CleverTapPlugin implements ActivityAware,
         FlutterPlugin, MethodCallHandler,
         SyncListener, InAppNotificationListener, CTInboxListener,
-        InAppNotificationButtonListener,
+        InAppNotificationButtonListener, InboxMessageListener,
         InboxMessageButtonListener, DisplayUnitListener,
         CTFeatureFlagsListener, CTProductConfigListener,
         CTPushAmpListener, CTPushNotificationListener {
@@ -170,6 +171,11 @@ public class CleverTapPlugin implements ActivityAware,
     @Override
     public void onInboxButtonClick(HashMap<String, String> payload) {
         invokeMethodOnUiThread("onInboxButtonClick", payload);
+    }
+
+    @Override
+    public void onInboxItemClicked(final CTInboxMessage message) {
+        invokeMethodOnUiThread("onInboxMessageClick", Utils.jsonObjectToMap(message.getData()));
     }
 
     @Override
@@ -1434,13 +1440,14 @@ public class CleverTapPlugin implements ActivityAware,
 
     private void setPushToken(MethodCall call, Result result, PushType type) {
         String token = call.argument("token");
+        String region = call.argument("region");
         if (isCleverTapNotNull(cleverTapAPI)) {
             switch (type.getType()) {
                 case "fcm":
                     cleverTapAPI.pushFcmRegistrationId(token, true);
                     break;
                 case "xps":
-                    cleverTapAPI.pushXiaomiRegistrationId(token, true);
+                    cleverTapAPI.pushXiaomiRegistrationId(token, region, true);
                     break;
                 case "hps":
                     cleverTapAPI.pushHuaweiRegistrationId(token, true);
@@ -1471,6 +1478,7 @@ public class CleverTapPlugin implements ActivityAware,
             this.cleverTapAPI.setCTPushNotificationListener(this);
             this.cleverTapAPI.setCTNotificationInboxListener(this);
             this.cleverTapAPI.setInboxMessageButtonListener(this);
+            this.cleverTapAPI.setCTInboxMessageListener(this);
             this.cleverTapAPI.setInAppNotificationButtonListener(this);
             this.cleverTapAPI.setInAppNotificationListener(this);
             this.cleverTapAPI.setSyncListener(this);
