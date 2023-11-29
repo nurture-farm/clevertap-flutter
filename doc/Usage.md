@@ -79,7 +79,47 @@ var lat = 19.07;
 var long = 72.87;
 CleverTapPlugin.setLocation(lat, long);
 ```
+
+#### Set Locale of the user
+
+```Dart
+Locale locale = Locale('en', 'IN');
+CleverTapPlugin.setLocale(locale);
+```
 ----
+
+## Integrate Custom Proxy Domain
+The custom proxy domain feature allows to proxy all events raised from the CleverTap SDK through your required domain,
+ideal for handling or relaying CleverTap events and Push Impression events with your application server.
+Refer following steps to configure the custom proxy domain(s) in the manifest file:
+
+#### [Android Platform] Configure Custom Proxy Domain(s) using Manifest file
+1. Add your CleverTap Account credentials in the Manifest file against the `CLEVERTAP_ACCOUNT_ID` and `CLEVERTAP_TOKEN` keys.
+2. Add the **CLEVERTAP_PROXY_DOMAIN** key with the proxy domain value for handling events through the custom proxy domain.
+3. Add the **CLEVERTAP_SPIKY_PROXY_DOMAIN** key with proxy domain value for handling push impression events.
+
+```xml
+        <meta-data
+            android:name="CLEVERTAP_ACCOUNT_ID"
+            android:value="YOUR ACCOUNT ID" />
+        <meta-data
+            android:name="CLEVERTAP_TOKEN"
+            android:value="YOUR ACCOUNT TOKEN" />
+        <meta-data
+            android:name="CLEVERTAP_PROXY_DOMAIN"
+            android:value="YOUR PROXY DOMAIN"/>  <!-- e.g., analytics.sdktesting.xyz -->
+        <meta-data
+            android:name="CLEVERTAP_SPIKY_PROXY_DOMAIN"
+            android:value="YOUR SPIKY PROXY DOMAIN"/>  <!-- e.g., spiky-analytics.sdktesting.xyz -->
+```
+#### [iOS Platform] Configure Custom Proxy Domain(s) using `CleverTap.autoIntegrate()` API
+1. Add your CleverTap Account credentials in the *Info.plist* file against the `CleverTapAccountID` and `CleverTapToken` keys.
+2. Add the `CleverTapProxyDomain` key with the proxy domain value for handling events through the custom proxy domain e.g., *analytics.sdktesting.xyz*.
+3. Add the `CleverTapSpikyProxyDomain` key with proxy domain value for handling push impression events e.g., *spiky-analytics.sdktesting.xyz*.
+4. Import the CleverTap SDK in your *AppDelegate* file and call the following method in the `didFinishLaunchingWithOptions:` method.
+    ``` swift
+      CleverTap.autoIntegrate()
+    ```
 
 ## User Events
 
@@ -181,6 +221,36 @@ var styleConfig = {
 CleverTapPlugin.showInbox(styleConfig);
 ```
 
+#### App Inbox Item Click Callback
+
+```Dart
+_clevertapPlugin.setCleverTapInboxNotificationMessageClickedHandler(inboxNotificationMessageClicked);
+
+void inboxNotificationMessageClicked(Map<String, dynamic>? data, int contentPageIndex, int buttonIndex) {
+    this.setState(() {
+      print("App Inbox item: ${data.toString()}");
+      print("Content Page index: $contentPageIndex");
+      print("Button index: $buttonIndex");
+    });
+}
+```
+
+#### App Inbox Button Click Callback
+```Dart
+_clevertapPlugin.setCleverTapInboxNotificationButtonClickedHandler(inboxNotificationButtonClicked);
+
+void inboxNotificationButtonClicked(Map<String, dynamic>? map) {
+  this.setState(() {
+    print("inboxNotificationButtonClicked called = ${map.toString()}");
+  });
+}
+```
+
+#### Dismiss the App Inbox
+```Dart
+CleverTapPlugin.dismissInbox();
+```
+
 #### Get Total Inbox Message Count
 
 ```Dart
@@ -254,11 +324,158 @@ CleverTapPlugin.setDebugLevel(3);
 
 ## Push Notifications
 
+#### **Handle Notification Click**
+Register a `setCleverTapPushClickedPayloadReceivedHandler` handler to get a notification click callback along with the entire payload.
+
+```Dart
+_clevertapPlugin.setCleverTapPushClickedPayloadReceivedHandler(pushClickedPayloadReceived);
+
+void pushClickedPayloadReceived(Map<String, dynamic> notificationPayload) {
+  print("pushClickedPayloadReceived called with notification payload: " + notificationPayload.toString());
+  // You may perform UI operation like redirecting the user to a specific page based on custom key-value pairs
+  // passed in the notificationPayload. You may also perform non UI operation such as HTTP requests, IO with local storage etc.
+  handleNotificationClick(notificationPayload); 
+}
+```
+> **Note:**
+>
+> Please note that the `pushClickedPayloadReceived` handler is triggered in Android platform only when the app is in the foreground or background states, and not when it has been terminated(killed).
+> However, in the case of iOS platform, this handler is supported regardless of whether the app is in the foreground, background, or has been terminated (killed).
+
+#### **[Android Platform] Handle Notification Trampoline Restrictions to support `pushClickedPayloadReceived` handler in Android 12 and Above**
+Due to [notification trampoline restrictions](https://developer.android.com/about/versions/12/behavior-changes-12#notification-trampolines), Android 12 and above do not directly support the `pushClickedPayloadReceived` callback.
+Hence, apps need to add manual handling for Android 12 and above to inform the CleverTap SDK about the notification click and get the `pushClickedPayloadReceived` callback.
+
+Add the following code in the `onNewIntent()` method of the Launcher `FlutterActivity` class in android:
+```kotlin
+class MainActivity : FlutterActivity() {
+
+override fun onNewIntent(intent: Intent?) {
+   super.onNewIntent(intent)
+
+   // On Android 12 and above, inform the notification click to get the pushClickedPayloadReceived callback on dart side.
+   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+       cleverTapDefaultInstance?.pushNotificationClickedEvent(intent!!.extras)
+   }
+ }
+}
+```
+
+#### **[Android Platform] Handle Notification Clicks When the App Is Killed**
+The CleverTap Plugin provides two ways to handle user interactions with notifications, depending on whether the app needs to perform UI or non-UI operations.
+
+##### **1. Perform UI impacting operation using `CleverTapPlugin.getAppLaunchNotification()`:**
+The default behavior on Android is to launch the application if the application is terminated(killed).
+Use `CleverTapPlugin.getAppLaunchNotification()` to get a Future containing a notification-payload of `Map` type if the application is opened from a terminated(killed) state.
+Depending on the content of a notification-payload, you may perform UI operation like redirecting the user to a specific page. 
+
+```Dart
+class Application extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() => _Application();
+}
+
+class _Application extends State<Application> {
+  void _handleKilledStateNotificationInteraction() async {
+    // Retrieve the notification-payload in a 'CleverTapAppLaunchNotification' class object 
+    // which caused the application to open from a terminated state.
+    CleverTapAppLaunchNotification appLaunchNotification = await CleverTapPlugin
+        .getAppLaunchNotification();
+
+    if (appLaunchNotification.didNotificationLaunchApp) {
+      //App is launched from a notification click which was rendered by the CleverTap SDK. 
+      Map<String, dynamic> notificationPayload = appLaunchNotification.payload!;
+      _handleDeeplink();
+    }
+  }
+  
+  void _handleDeeplink() {
+    // It is assumed that all notifications contain a data field with the key 'type' but you may also have 
+    // a different key for deeplink handling.
+    var type = notificationPayload["type"];
+
+    if (type != null) {
+      print(
+          "_handleKilledStateNotificationInteraction => Type: $type");
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  DeepLinkPage(type: type)));
+    }
+  }
+  
+  @override
+  void initState() {
+    super.initState();
+
+    // Run CleverTapPlugin.getAppLaunchNotification in an async function
+    // as initState() must not be async
+    if (Platform.isAndroid) {
+      _handleKilledStateNotificationInteraction();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text("...");
+  }
+}
+```
+
+> **Note:**
+> 
+> The notification needs to be generated by the CleverTap SDK to get the notification payload from the
+> `CleverTapPlugin.getAppLaunchNotification()` API.
+
+
+##### **2. Perform non-UI operation using `onKilledStateNotificationClicked` handler:**
+There are two steps to setup the `onKilledStateNotificationClicked` handler:
+1. Your `Application` class should extend the `CleverTapApplication` class instead of the `FlutterApplication` class.
+2. Register the `onKilledStateNotificationClicked` handler to get a notification click callback along with the entire payload. When notification is clicked, an isolate is spawned (Android only) allowing you to handle notification click even when your application is not running.
+There are a few things to keep in mind about your `onKilledStateNotificationClicked` handler:
+ - It must not be an anonymous function.
+ - It must be a top-level function (e.g. not a class method which requires initialization).
+ - When using Flutter version 3.3.0 or higher, the `onKilledStateNotificationClicked` handler must be annotated with `@pragma('vm:entry-point')` right above the function declaration (otherwise it may be removed during tree shaking for release mode).
+
+Add the following method to your `main.dart` file, right after the import statements, and outside any Widget class declaration, to process push notifications in the killed state via a Flutter background isolate:
+
+```Dart
+@pragma('vm:entry-point')
+void _onKilledStateNotificationClickedHandler(Map<String, dynamic> map) async {
+  print("Notification Payload received: " + map.toString());
+}
+
+void main() {
+  CleverTapPlugin.onKilledStateNotificationClicked(_onKilledStateNotificationClickedHandler);
+  runApp(MyApp());
+}
+```
+
+> **Note:**
+> 
+> Since the `_onKilledStateNotificationClickedHandler` handler runs in its own isolate outside your applications context, it is not possible to update application state or execute any UI operation from the handler itself. 
+> You can, however, perform HTTP requests, IO operations with local storage etc.
+
 #### Creating Notification Channel
 
 ```Dart
 CleverTapPlugin.createNotificationChannel("fluttertest", "Flutter Test", "Flutter Test", 3, true);			
 ```
+
+#### Default Notification Channel
+Starting from CleverTap Plugin v1.8.0 we have introduced a new feature that allows developers to define a default notification channel for their app. This feature provides flexibility in handling push notifications. 
+Please note that this is only supported for clevertap core notifications. Support for push templates will be released soon. To specify the default notification channel ID, you can add the following metadata in your app's manifest file:
+
+```XML
+<meta-data android:name="CLEVERTAP_DEFAULT_CHANNEL_ID" android:value="your_default_channel_id" />
+```
+
+By including this metadata, you can define a specific notification channel that CleverTap will use if the channel provided in push payload is not registered by your app. This ensures that push notifications are displayed consistently even if the app's notification channels are not set up.
+
+In case the SDK does not find the default channel ID specified in the manifest, it will automatically fallback to using a default channel called "Miscellaneous". This ensures that push notifications are still delivered, even if no specific default channel is specified in the manifest.
+
+This enhancement provides developers with greater control over the default notification channel used by CleverTap for push notifications, ensuring a seamless and customizable user experience.
 
 #### Delete Notification Channel
 
@@ -311,8 +528,7 @@ CleverTapPlugin.createNotification(data);
 
 ```Dart
 void onDisplayUnitsLoaded(List<dynamic> displayUnits) {
-    this.setState(() async {
-      List displayUnits = await CleverTapPlugin.getAllDisplayUnits();
+    this.setState(() {
       print("Display Units = " + displayUnits.toString());
    });
 }
@@ -456,6 +672,28 @@ CleverTapPlugin.setOffline(false);
 // Will set the user offline
 CleverTapPlugin.setOffline(true);
 ```
+
+-----------
+
+## Push primer for notification Permission (Android and iOS)
+Follow the [Push Primer integration doc](PushPrimer.md).
+
+## Encryption of PII data (Android and iOS)
+PII data is stored across the SDK and could be sensitive information. From CleverTap Flutter SDK v1.9.0 onwards, you can enable encryption for PII data wiz. Email, Identity, Name and Phone.
+
+Currently 2 levels of encryption are supported i.e None(0) and Medium(1). Encryption level is None by default.
+**None** - All stored data is in plaintext
+**Medium** - PII data is encrypted completely.
+
+#### Android
+Add encryption level in the `AndroidManifest.xml` as following:
+```XML
+<meta-data
+    android:name="CLEVERTAP_ENCRYPTION_LEVEL"
+    android:value="1" />
+```
+#### iOS
+Add the `CleverTapEncryptionLevel` String key to `info.plist` file where value 1 means Medium and 0 means None. Encryption Level will be None if any other value is provided.
 
 
 ### For more information,
