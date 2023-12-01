@@ -1,27 +1,12 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
-import 'dart:io' show Platform;
 
-import 'package:clevertap_plugin/clevertap_plugin.dart';
-import 'package:example/deeplink_page.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
+import 'package:clevertap_plugin/clevertap_plugin.dart';
 
-@pragma('vm:entry-point')
-void onKilledStateNotificationClickedHandler(Map<String, dynamic> map) async {
-  print("onKilledStateNotificationClickedHandler called from headless task!");
-  print("Notification Payload received: " + map.toString());
-}
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  CleverTapPlugin.onKilledStateNotificationClicked(onKilledStateNotificationClickedHandler);
-  runApp(MaterialApp(
-    title: 'Home Page',
-    home: MyApp(),
-  ));
-}
+void main() => runApp(MyApp());
 
 class MyApp extends StatefulWidget {
   @override
@@ -35,38 +20,16 @@ class _MyAppState extends State<MyApp> {
   var offLine = false;
   var enableDeviceNetworkingInfo = false;
 
-  void _handleKilledStateNotificationInteraction() async {
-    CleverTapAppLaunchNotification appLaunchNotification =
-        await CleverTapPlugin.getAppLaunchNotification();
-    print(
-        "_handleKilledStateNotificationInteraction => $appLaunchNotification");
-
-    if (appLaunchNotification.didNotificationLaunchApp) {
-      Map<String, dynamic> notificationPayload = appLaunchNotification.payload!;
-      handleDeeplink(notificationPayload);
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     initPlatformState();
     activateCleverTapFlutterPluginHandlers();
     CleverTapPlugin.setDebugLevel(3);
-    if (Platform.isAndroid) {
-      _handleKilledStateNotificationInteraction();
-    }
-    CleverTapPlugin.createNotificationChannel(
-        "fluttertest", "Flutter Test", "Flutter Test", 3, true);
+    CleverTapPlugin.createNotificationChannel("fluttertest", "Flutter Test", "Flutter Test", 3, true);
     CleverTapPlugin.initializeInbox();
     CleverTapPlugin.registerForPush(); //only for iOS
     //var initialUrl = CleverTapPlugin.getInitialUrl();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    // CleverTapPlugin.unregisterPushPermissionNotificationResponseListener();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -82,8 +45,6 @@ class _MyAppState extends State<MyApp> {
         pushClickedPayloadReceived);
     _clevertapPlugin.setCleverTapInAppNotificationDismissedHandler(
         inAppNotificationDismissed);
-    _clevertapPlugin.setCleverTapInAppNotificationShowHandler(
-        inAppNotificationShow);
     _clevertapPlugin
         .setCleverTapProfileDidInitializeHandler(profileDidInitialize);
     _clevertapPlugin.setCleverTapProfileSyncHandler(profileDidUpdate);
@@ -96,8 +57,6 @@ class _MyAppState extends State<MyApp> {
         inAppNotificationButtonClicked);
     _clevertapPlugin.setCleverTapInboxNotificationButtonClickedHandler(
         inboxNotificationButtonClicked);
-    _clevertapPlugin.setCleverTapInboxNotificationMessageClickedHandler(
-        inboxNotificationMessageClicked);
     _clevertapPlugin.setCleverTapFeatureFlagUpdatedHandler(featureFlagsUpdated);
     _clevertapPlugin
         .setCleverTapProductConfigInitializedHandler(productConfigInitialized);
@@ -105,121 +64,24 @@ class _MyAppState extends State<MyApp> {
         .setCleverTapProductConfigFetchedHandler(productConfigFetched);
     _clevertapPlugin
         .setCleverTapProductConfigActivatedHandler(productConfigActivated);
-    _clevertapPlugin.setCleverTapPushPermissionResponseReceivedHandler(pushPermissionResponseReceived);
   }
 
   void inAppNotificationDismissed(Map<String, dynamic> map) {
     this.setState(() {
       print("inAppNotificationDismissed called");
-      // Uncomment to print payload.
-      // printInAppNotificationDismissedPayload(map);
-    });
-  }
-
-  void printInAppNotificationDismissedPayload(Map<String, dynamic>? map) {
-    if (map != null) {
-      var extras = map['extras'];
-      var actionExtras = map['actionExtras'];
-      print("InApp -> dismissed with extras map: ${extras.toString()}");
-      print("InApp -> dismissed with actionExtras map: ${actionExtras.toString()}");
-      actionExtras.forEach((key, value) {
-        print("Value for key: ${key.toString()} is: ${value.toString()}");
-      });
-    }
-  }
-
-  void inAppNotificationShow(Map<String, dynamic> map) {
-    this.setState(() {
-      print("inAppNotificationShow called = ${map.toString()}");
     });
   }
 
   void inAppNotificationButtonClicked(Map<String, dynamic>? map) {
     this.setState(() {
       print("inAppNotificationButtonClicked called = ${map.toString()}");
-      // Uncomment to print payload.
-      // printInAppButtonClickedPayload(map);
     });
-  }
-
-  void printInAppButtonClickedPayload(Map<String, dynamic>? map) {
-    if (map != null) {
-      print("InApp -> button clicked with map: ${map.toString()}");
-      map.forEach((key, value) {
-        print("Value for key: ${key.toString()} is: ${value.toString()}");
-      });
-    }
   }
 
   void inboxNotificationButtonClicked(Map<String, dynamic>? map) {
     this.setState(() {
       print("inboxNotificationButtonClicked called = ${map.toString()}");
-      // Uncomment to print payload.
-      // printInboxMessageButtonClickedPayload(map);
     });
-  }
-
-  void printInboxMessageButtonClickedPayload(Map<String, dynamic>? map) {
-    if (map != null) {
-      print("App Inbox -> message button tapped with customExtras key/value:");
-      map.forEach((key, value) {
-        print("Value for key: ${key.toString()} is: ${value.toString()}");
-      });
-    }
-  }
-
-  void inboxNotificationMessageClicked(
-      Map<String, dynamic>? data, int contentPageIndex, int buttonIndex) {
-    this.setState(() {
-      print("App Inbox -> "
-          "inboxNotificationMessageClicked called = InboxItemClicked at page-index "
-          "$contentPageIndex with button-index $buttonIndex" + data.toString());
-
-      var inboxMessageClicked = data?["msg"];
-      if (inboxMessageClicked == null) {
-        return;
-      }
-
-      //The contentPageIndex corresponds to the page index of the content, which ranges from 0 to the total number of pages for carousel templates. For non-carousel templates, the value is always 0, as they only have one page of content.
-      var messageContentObject =
-      inboxMessageClicked["content"][contentPageIndex];
-
-      //The buttonIndex corresponds to the CTA button clicked (0, 1, or 2). A value of -1 indicates the app inbox body/message clicked.
-      if (buttonIndex != -1) {
-        //button is clicked
-        var buttonObject = messageContentObject["action"]["links"][buttonIndex];
-        var buttonType = buttonObject?["type"];
-        switch (buttonType) {
-          case "copy":
-          //this type copies the associated text to the clipboard
-            var copiedText = buttonObject["copyText"]?["text"];
-            print("App Inbox -> copied text to Clipboard: $copiedText");
-            //dismissAppInbox();
-            break;
-          case "url":
-          //this type fires the deeplink
-            var firedDeepLinkUrl = buttonObject["url"]?["android"]?["text"];
-            print("App Inbox -> fired deeplink url: $firedDeepLinkUrl");
-            //dismissAppInbox();
-            break;
-          case "kv":
-          //this type contains the custom key-value pairs
-            var kvPair = buttonObject["kv"];
-            print("App Inbox -> custom key-value pair: $kvPair");
-            //dismissAppInbox();
-            break;
-        }
-      } else {
-        //Item's body is clicked
-        print(
-            "App Inbox -> type/template of App Inbox item: ${inboxMessageClicked["type"]}");
-        //dismissAppInbox();
-      }
-    });
-  }
-
-  void dismissAppInbox() {
-    CleverTapPlugin.dismissInbox();
   }
 
   void profileDidInitialize() {
@@ -252,35 +114,10 @@ class _MyAppState extends State<MyApp> {
   }
 
   void onDisplayUnitsLoaded(List<dynamic>? displayUnits) {
-    this.setState(() {
+    this.setState(() async {
+      List? displayUnits = await CleverTapPlugin.getAllDisplayUnits();
       print("Display Units = " + displayUnits.toString());
-      // Uncomment to print payload.
-      // printDisplayUnitPayload(displayUnits);
     });
-  }
-
-  void printDisplayUnitPayload(List<dynamic>? displayUnits) {
-    if (displayUnits != null) {
-      print("Total Display unit count = ${(displayUnits.length).toString()}");
-      displayUnits.forEach((element) {
-        printDisplayUnit(element);
-      });
-    }
-  }
-
-  void printDisplayUnit(Map<dynamic, dynamic> displayUnit) {
-    var content = displayUnit['content'];
-    content.forEach((contentElement) {
-      print("Title text of display unit is ${contentElement['title']['text']}");
-      print("Message text of display unit is ${contentElement['message']['text']}");
-    });
-    var customKV = displayUnit['custom_kv'];
-    if (customKV != null) {
-      print("Display units custom key-values:");
-      customKV.forEach((key, value) {
-        print("Value for key: ${key.toString()} is: ${value.toString()}");
-      });
-    }
   }
 
   void featureFlagsUpdated() {
@@ -309,12 +146,12 @@ class _MyAppState extends State<MyApp> {
     print("Product Config Activated");
     this.setState(() async {
       String? stringvar =
-      await CleverTapPlugin.getProductConfigString("StringKey");
+          await CleverTapPlugin.getProductConfigString("StringKey");
       print("PC String = " + stringvar.toString());
       int? intvar = await CleverTapPlugin.getProductConfigLong("IntKey");
       print("PC int = " + intvar.toString());
       double? doublevar =
-      await CleverTapPlugin.getProductConfigDouble("DoubleKey");
+          await CleverTapPlugin.getProductConfigDouble("DoubleKey");
       print("PC double = " + doublevar.toString());
     });
   }
@@ -328,15 +165,12 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void pushClickedPayloadReceived(Map<String, dynamic> notificationPayload) {
+  void pushClickedPayloadReceived(Map<String, dynamic> map) {
     print("pushClickedPayloadReceived called");
-    print("on Push Click Payload = " + notificationPayload.toString());
-    handleDeeplink(notificationPayload);
-  }
-
-  void pushPermissionResponseReceived(bool accepted) {
-    print("Push Permission response called ---> accepted = " +
-        (accepted ? "true" : "false"));
+    this.setState(() async {
+      var data = jsonEncode(map);
+      print("on Push Click Payload = " + data.toString());
+    });
   }
 
   @override
@@ -362,85 +196,6 @@ class _MyAppState extends State<MyApp> {
                           "NOTE : All CleverTap functions are listed below"),
                       subtitle: Text(
                           "Please check console logs for more info after tapping below"),
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.lightBlueAccent,
-                  child: Padding(
-                    padding: const EdgeInsets.all(0.0),
-                    child: ListTile(
-                      title: Text("Product Experiences"),
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Sync Variables"),
-                      onTap: syncVariables,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Fetch Variables"),
-                      onTap: fetchVariables,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Define Variables"),
-                      onTap: defineVariables,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Get Variables"),
-                      onTap: getVariables,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text('Get Variable Value for name \'flutter_var_string\''),
-                      onTap: getVariable,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text('Add \'OnVariablesChanged\' listener'),
-                      onTap: onVariablesChanged,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text('Add \'OnValueChanged\' listener for name \'flutter_var_string\''),
-                      onTap: onValueChanged,
                     ),
                   ),
                 ),
@@ -486,6 +241,7 @@ class _MyAppState extends State<MyApp> {
                     ),
                   ),
                 ),
+
                 Card(
                   color: Colors.grey.shade300,
                   child: Padding(
@@ -494,28 +250,6 @@ class _MyAppState extends State<MyApp> {
                       title: Text("Add Profile Multi Value"),
                       subtitle: Text("Add user property"),
                       onTap: addMultiValue,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Profile increment value"),
-                      subtitle: Text("Increment value by 15"),
-                      onTap: incrementValue,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Profile decrement value"),
-                      subtitle: Text("Decrement value by 10"),
-                      onTap: decrementValue,
                     ),
                   ),
                 ),
@@ -652,7 +386,7 @@ class _MyAppState extends State<MyApp> {
                     child: ListTile(
                       title: Text("Get Event History"),
                       subtitle: Text("Get history of an event"),
-                      onTap: getEventHistory,
+                      onTap: recordEvent,
                     ),
                   ),
                 ),
@@ -673,17 +407,6 @@ class _MyAppState extends State<MyApp> {
                       title: Text("Show Inbox"),
                       subtitle: Text("Opens sample App Inbox"),
                       onTap: showInbox,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Show Inbox with sections"),
-                      subtitle: Text("Opens sample App Inbox"),
-                      onTap: showInboxWithTabs,
                     ),
                   ),
                 ),
@@ -736,17 +459,6 @@ class _MyAppState extends State<MyApp> {
                   child: Padding(
                     padding: const EdgeInsets.all(4.0),
                     child: ListTile(
-                      title: Text("Delete Inbox Messages for list of IDs"),
-                      subtitle: Text("Deletes inbox messages for list of IDs"),
-                      onTap: deleteInboxMessagesForIds,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
                       title: Text("Mark Read Inbox Message for given ID"),
                       subtitle: Text("Mark read inbox message for given ID"),
                       onTap: markReadInboxMessageForId,
@@ -758,20 +470,9 @@ class _MyAppState extends State<MyApp> {
                   child: Padding(
                     padding: const EdgeInsets.all(4.0),
                     child: ListTile(
-                      title: Text("Mark Read Inbox Messagess for list of IDs"),
-                      subtitle: Text("Mark read inbox messages for list of IDs"),
-                      onTap: markReadInboxMessagesForIds,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
                       title: Text("Push Inbox Message Clicked"),
                       subtitle:
-                          Text("Pushes/Records inbox message clicked event"),
+                      Text("Pushes/Records inbox message clicked event"),
                       onTap: pushInboxNotificationClickedEventForId,
                     ),
                   ),
@@ -783,7 +484,7 @@ class _MyAppState extends State<MyApp> {
                     child: ListTile(
                       title: Text("Push Inbox Message Viewed"),
                       subtitle:
-                          Text("Pushes/Records inbox message viewed event"),
+                      Text("Pushes/Records inbox message viewed event"),
                       onTap: pushInboxNotificationViewedEventForId,
                     ),
                   ),
@@ -809,52 +510,6 @@ class _MyAppState extends State<MyApp> {
                         CleverTapPlugin.setDebugLevel(3);
                       },
                       trailing: Icon(Icons.info),
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.lightBlueAccent,
-                  child: Padding(
-                    padding: const EdgeInsets.all(0.0),
-                    child: ListTile(
-                      title: Text("In-App messaging controls"),
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Suspend InApp notifications"),
-                      subtitle:
-                          Text("Suspends display of InApp Notifications."),
-                      onTap: suspendInAppNotifications,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Discard InApp notifications"),
-                      subtitle: Text(
-                          "Suspends the display of InApp Notifications "
-                          "and discards any new InApp Notifications to be shown"
-                          " after this method is called."),
-                      onTap: discardInAppNotifications,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Resume InApp notifications"),
-                      subtitle: Text("Resumes display of InApp Notifications."),
-                      onTap: resumeInAppNotifications,
                     ),
                   ),
                 ),
@@ -988,6 +643,7 @@ class _MyAppState extends State<MyApp> {
                     ),
                   ),
                 ),
+
                 Card(
                   color: Colors.grey.shade300,
                   child: Padding(
@@ -1096,283 +752,13 @@ class _MyAppState extends State<MyApp> {
                   ),
                 ),
                 Card(
-                  color: Colors.lightBlueAccent,
-                  child: Padding(
-                    padding: const EdgeInsets.all(0.0),
-                    child: ListTile(
-                      title: Text("Push Templates"),
-                    ),
-                  ),
-                ),
-                Card(
                   color: Colors.grey.shade300,
                   child: Padding(
                     padding: const EdgeInsets.all(4.0),
                     child: ListTile(
-                      title: Text("Basic Push"),
-                      onTap: sendBasicPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Carousel Push"),
-                      onTap: sendAutoCarouselPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Manual Carousel Push"),
-                      onTap: sendManualCarouselPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("FilmStrip Carousel Push"),
-                      onTap: sendFilmStripCarouselPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Rating Push"),
-                      onTap: sendRatingCarouselPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Product Display"),
-                      onTap: sendProductDisplayPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Linear Product Display"),
-                      onTap: sendLinearProductDisplayPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Five CTA"),
-                      onTap: sendCTAPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Zero Bezel"),
-                      onTap: sendZeroBezelPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Zero Bezel Text Only"),
-                      onTap: sendZeroBezelTextOnlyPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Timer Push"),
-                      onTap: sendTimerPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text(
-                          "Input Box - CTA + reminder Push Campaign - DOC true"),
-                      onTap: sendInputBoxPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Input Box - Reply with Event"),
-                      onTap: sendInputBoxReplyEventPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Input Box - Reply with Intent"),
-                      onTap: sendInputBoxReplyAutoOpenPush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text(
-                          "Input Box - CTA + reminder Push Campaign - DOC false"),
-                      onTap: sendInputBoxRemindDOCFalsePush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Input Box - CTA - DOC true"),
-                      onTap: sendInputBoxCTADOCTruePush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Input Box - CTA - DOC false"),
-                      onTap: sendInputBoxCTADOCFalsePush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Input Box - reminder - DOC true"),
-                      onTap: sendInputBoxReminderDOCTruePush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Input Box - reminder - DOC false"),
-                      onTap: sendInputBoxReminderDOCFalsePush,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Set Push token : FCM"),
-                      onTap: setPushTokenFCM,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Set Push token : XPS"),
-                      onTap: setPushTokenXPS,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Set Push token : HMS"),
-                      onTap: setPushTokenHMS,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.lightBlueAccent,
-                  child: Padding(
-                    padding: const EdgeInsets.all(0.0),
-                    child: ListTile(
-                      title: Text("Push Primer"),
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Prompt for Push Notification"),
-                      onTap: promptForPushNotification,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Local Half Interstitial Push Primer"),
-                      onTap: localHalfInterstitialPushPrimer,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Local Alert Push Primer"),
-                      onTap: localAlertPushPrimer,
-                    ),
-                  ),
-                ),
-                Card(
-                  color: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ListTile(
-                      title: Text("Set Locale"),
-                      subtitle: Text("Use to set Locale of a user"),
-                      onTap: setLocale,
+                      title: Text("Logout user"),
+                      subtitle: Text("Logout's user and removed all cached profile data."),
+                      onTap: logout,
                     ),
                   ),
                 ),
@@ -1380,175 +766,6 @@ class _MyAppState extends State<MyApp> {
             )),
       ),
     );
-  }
-
-  void sendBasicPush() {
-    var eventData = {
-      // Key:    Value
-      'first': 'partridge',
-      'second': 'turtledoves'
-    };
-    CleverTapPlugin.recordEvent("Send Basic Push", eventData);
-  }
-
-  void sendAutoCarouselPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Carousel Push", eventData);
-  }
-
-  void sendManualCarouselPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Manual Carousel Push", eventData);
-  }
-
-  void sendFilmStripCarouselPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Filmstrip Carousel Push", eventData);
-  }
-
-  void sendRatingCarouselPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Rating Push", eventData);
-  }
-
-  void sendProductDisplayPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Product Display Notification", eventData);
-  }
-
-  void sendLinearProductDisplayPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Linear Product Display Push", eventData);
-  }
-
-  void sendCTAPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send CTA Notification", eventData);
-  }
-
-  void sendZeroBezelPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Zero Bezel Notification", eventData);
-  }
-
-  void sendZeroBezelTextOnlyPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent(
-        "Send Zero Bezel Text Only Notification", eventData);
-  }
-
-  void sendTimerPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Timer Notification", eventData);
-  }
-
-  void sendInputBoxPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Input Box Notification", eventData);
-  }
-
-  void sendInputBoxReplyEventPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent(
-        "Send Input Box Reply with Event Notification", eventData);
-  }
-
-  void sendInputBoxReplyAutoOpenPush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent(
-        "Send Input Box Reply with Auto Open Notification", eventData);
-  }
-
-  void sendInputBoxRemindDOCFalsePush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent(
-        "Send Input Box Remind Notification DOC FALSE", eventData);
-  }
-
-  void sendInputBoxCTADOCTruePush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Input Box CTA DOC true", eventData);
-  }
-
-  void sendInputBoxCTADOCFalsePush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Input Box CTA DOC false", eventData);
-  }
-
-  void sendInputBoxReminderDOCTruePush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Input Box Reminder DOC true", eventData);
-  }
-
-  void sendInputBoxReminderDOCFalsePush() {
-    var eventData = {
-      // Key:    Value
-      '': ''
-    };
-    CleverTapPlugin.recordEvent("Send Input Box Reminder DOC false", eventData);
-  }
-
-  void setPushTokenFCM() {
-    CleverTapPlugin.setPushToken("token_fcm");
-  }
-
-  void setPushTokenXPS() {
-    CleverTapPlugin.setXiaomiPushToken("token_xps", "Europe");
-  }
-
-  void setPushTokenHMS() {
-    CleverTapPlugin.setHuaweiPushToken("token_fcm");
   }
 
   void recordEvent() {
@@ -1640,23 +857,8 @@ class _MyAppState extends State<MyApp> {
           'noMessageText': 'No message(s) to show.',
           'navBarTitle': 'App Inbox',
           'navBarTitleColor': '#101727',
-          'navBarColor': '#EF4444'
-        };
-        CleverTapPlugin.showInbox(styleConfig);
-      });
-    }
-  }
-
-  void showInboxWithTabs() {
-    if (inboxInitialized) {
-      showToast("Opening App Inbox", onDismiss: () {
-        var styleConfig = {
-          'noMessageTextColor': '#ff6600',
-          'noMessageText': 'No message(s) to show.',
-          'navBarTitle': 'App Inbox',
-          'navBarTitleColor': '#101727',
           'navBarColor': '#EF4444',
-          'tabs': ["promos", "offers"]
+          'tabs': ["Offers"]
         };
         CleverTapPlugin.showInbox(styleConfig);
       });
@@ -1667,38 +869,12 @@ class _MyAppState extends State<MyApp> {
     List? messages = await CleverTapPlugin.getAllInboxMessages();
     showToast("See all inbox messages in console");
     print("Inbox Messages = " + messages.toString());
-    // Uncomment to print payload.
-    // printInboxMessagesArray(messages);
   }
 
   void getUnreadInboxMessages() async {
     List? messages = await CleverTapPlugin.getUnreadInboxMessages();
     showToast("See unread inbox messages in console");
     print("Unread Inbox Messages = " + messages.toString());
-    // Uncomment to print payload.
-    // printInboxMessagesArray(messages);
-  }
-
-  void printInboxMessagesArray(List? messages) {
-    if (messages != null) {
-      print("Total Inbox messages count = ${(messages.length).toString()}");
-      messages.forEach((element) {
-        printInboxMessageMap(element);
-      });
-    }
-  }
-
-  void printInboxMessageMap(Map<dynamic,dynamic> inboxMessage) {
-    print("Inbox Message wzrk_id = ${inboxMessage['wzrk_id'].toString()}");
-    print("Type of Inbox = ${inboxMessage['msg']['type']}");
-    var content = inboxMessage['msg']['content'];
-    content.forEach((element) {
-      print("Inbox Message Title = ${element['title']['text']} and message = ${element['message']['text']}");
-      var links = element['action']['links'];
-      links.forEach((link) {
-        print("Inbox Message have link type = ${link['type'].toString()}");
-      });
-    });
   }
 
   void getInboxMessageForId() async {
@@ -1716,8 +892,6 @@ class _MyAppState extends State<MyApp> {
     setState((() {
       showToast("Inbox Message for id =  ${messageForId.toString()}");
       print("Inbox Message for id =  ${messageForId.toString()}");
-      // Uncomment to print payload.
-      // printInboxMessageMap(messageForId);
     }));
   }
 
@@ -1740,61 +914,26 @@ class _MyAppState extends State<MyApp> {
     }));
   }
 
-  void deleteInboxMessagesForIds() async {
-    var messageId = await getFirstInboxMessageId();
-
-    if (messageId == null) {
-      setState((() {
-        showToast("Inbox Message id is null");
-        print("Inbox Message id is null");
-      }));
-      return;
-    }
-
-    await CleverTapPlugin.deleteInboxMessagesForIds([messageId]);
-
-    setState((() {
-      showToast("Deleted Inbox Messages with ids =  $messageId");
-      print("Deleted Inbox Messages with ids =  $messageId");
-    }));
-  }
-
   void markReadInboxMessageForId() async {
-    var messageId = await getFirstUnreadInboxMessageId();
+    var messageList = await CleverTapPlugin.getUnreadInboxMessages();
 
-    if (messageId == null) {
+    if (messageList == null || messageList.length == 0) return;
+    Map<dynamic, dynamic> itemFirst = messageList[0];
+
+    if (Platform.isAndroid) {
+      await CleverTapPlugin.markReadInboxMessageForId(itemFirst["id"]);
       setState((() {
-        showToast("Inbox Message id is null");
-        print("Inbox Message id is null");
+        showToast("Marked Inbox Message as read with id =  ${itemFirst["id"]}");
+        print("Marked Inbox Message as read with id =  ${itemFirst["id"]}");
       }));
-      return;
-    }
-
-    await CleverTapPlugin.markReadInboxMessageForId(messageId);
-
-    setState((() {
-      showToast("Marked Inbox Message as read with id =  $messageId");
-      print("Marked Inbox Message as read with id =  $messageId");
-    }));
-  }
-
-  void markReadInboxMessagesForIds() async{
-    var messageId = await getFirstUnreadInboxMessageId();
-
-    if (messageId == null) {
+    } else if (Platform.isIOS) {
+      await CleverTapPlugin.markReadInboxMessageForId(itemFirst["_id"]);
       setState((() {
-        showToast("Inbox Message id is null");
-        print("Inbox Message id is null");
+        showToast(
+            "Marked Inbox Message as read with id =  ${itemFirst["_id"]}");
+        print("Marked Inbox Message as read with id =  ${itemFirst["_id"]}");
       }));
-      return;
     }
-
-    await CleverTapPlugin.markReadInboxMessagesForIds([messageId]);
-
-    setState((() {
-      showToast("Marked Inbox Messages as read with ids =  ${[messageId]}");
-      print("Marked Inbox Messages as read with ids =  ${[messageId]}");
-    }));
   }
 
   void pushInboxNotificationClickedEventForId() async {
@@ -1853,22 +992,6 @@ class _MyAppState extends State<MyApp> {
     return "";
   }
 
-  Future<String>? getFirstUnreadInboxMessageId() async {
-    var messageList = await CleverTapPlugin.getUnreadInboxMessages();
-    print("inside getFirstUnreadInboxMessageId");
-
-    Map<dynamic, dynamic> itemFirst = messageList?[0];
-    print(itemFirst.toString());
-
-    if (Platform.isAndroid) {
-      return itemFirst["id"];
-    } else if (Platform.isIOS) {
-      return itemFirst["_id"];
-    }
-    return "";
-  }
-
-
   void setOptOut() {
     if (optOut) {
       CleverTapPlugin.setOptOut(false);
@@ -1891,6 +1014,10 @@ class _MyAppState extends State<MyApp> {
       offLine = true;
       showToast("You are offline");
     }
+  }
+
+  void logout() {
+    CleverTapPlugin.performLogout();
   }
 
   void setEnableDeviceNetworkingInfo() {
@@ -1994,12 +1121,6 @@ class _MyAppState extends State<MyApp> {
     showToast("Location is set");
   }
 
-  void setLocale() {
-    Locale locale = Locale('en', 'IN');
-    CleverTapPlugin.setLocale(locale);
-    showToast("Locale is set");
-  }
-
   void getCTAttributionId() {
     CleverTapPlugin.profileGetCleverTapAttributionIdentifier()
         .then((attributionId) {
@@ -2016,7 +1137,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void getCleverTapId() {
-    CleverTapPlugin.getCleverTapID().then((clevertapId) {
+    CleverTapPlugin.profileGetCleverTapID().then((clevertapId) {
       if (clevertapId == null) return;
       setState((() {
         showToast("$clevertapId");
@@ -2033,10 +1154,11 @@ class _MyAppState extends State<MyApp> {
     var stuff = ["bags", "shoes"];
     var profile = {
       'Name': 'Captain America',
-      'Identity': '100',
+      'Identity': '12345',
       'Email': 'captain@america.com',
       'Phone': '+14155551234',
-      'stuff': stuff
+      'stuff': stuff,
+      "userType": "FARMER"
     };
     CleverTapPlugin.onUserLogin(profile);
     showToast("onUserLogin called, check console for details");
@@ -2056,18 +1178,6 @@ class _MyAppState extends State<MyApp> {
   void addMultiValue() {
     var value = "value1";
     CleverTapPlugin.profileAddMultiValue("props", value);
-    showToast("check console for details");
-  }
-
-  void incrementValue() {
-    var value = 15;
-    CleverTapPlugin.profileIncrementValue("score", value);
-    showToast("check console for details");
-  }
-
-  void decrementValue() {
-    var value = 10;
-    CleverTapPlugin.profileDecrementValue("score", value);
     showToast("check console for details");
   }
 
@@ -2159,21 +1269,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void suspendInAppNotifications() {
-    CleverTapPlugin.suspendInAppNotifications();
-    showToast("InApp notification is suspended");
-  }
-
-  void discardInAppNotifications() {
-    CleverTapPlugin.discardInAppNotifications();
-    showToast("InApp notification is discarded");
-  }
-
-  void resumeInAppNotifications() {
-    CleverTapPlugin.resumeInAppNotifications();
-    showToast("InApp notification is resumed");
-  }
-
   void enablePersonalization() {
     CleverTapPlugin.enablePersonalization();
     showToast("Personalization enabled");
@@ -2189,10 +1284,7 @@ class _MyAppState extends State<MyApp> {
   void getAdUnits() async {
     List? displayUnits = await CleverTapPlugin.getAllDisplayUnits();
     showToast("check console for logs");
-    print("Display Units Payload = " + displayUnits.toString());
-
-    // Uncomment to print payload.
-    // printDisplayUnitPayload(displayUnits);
+    print("Display Units = " + displayUnits.toString());
   }
 
   void fetch() {
@@ -2210,134 +1302,5 @@ class _MyAppState extends State<MyApp> {
   void fetchAndActivate() {
     CleverTapPlugin.fetchAndActivate();
     showToast("check console for logs");
-  }
-
-  void promptForPushNotification() {
-    var fallbackToSettings = true;
-    CleverTapPlugin.promptForPushNotification(fallbackToSettings);
-    showToast("Prompt Push Permission");
-  }
-
-  void localHalfInterstitialPushPrimer() {
-    var pushPrimerJSON = {
-      'inAppType': 'half-interstitial',
-      'titleText': 'Get Notified',
-      'messageText': 'Please enable notifications on your device to use Push Notifications.',
-      'followDeviceOrientation': false,
-      'positiveBtnText': 'Allow',
-      'negativeBtnText': 'Cancel',
-      'fallbackToSettings': true,
-      'backgroundColor': '#FFFFFF',
-      'btnBorderColor': '#000000',
-      'titleTextColor': '#000000',
-      'messageTextColor': '#000000',
-      'btnTextColor': '#000000',
-      'btnBackgroundColor': '#FFFFFF',
-      'btnBorderRadius': '4',
-      'imageUrl': 'https://icons.iconarchive.com/icons/treetog/junior/64/camera-icon.png'
-    };
-    CleverTapPlugin.promptPushPrimer(pushPrimerJSON);
-    showToast("Half-Interstitial Push Primer");
-  }
-
-  void localAlertPushPrimer() {
-    this.setState(() async {
-      bool? isPushPermissionEnabled = await CleverTapPlugin
-          .getPushNotificationPermissionStatus();
-      if (isPushPermissionEnabled == null) return;
-
-      // Check Push Permission status and then call `promptPushPrimer` if not enabled.
-      if (!isPushPermissionEnabled) {
-        var pushPrimerJSON = {
-          'inAppType': 'alert',
-          'titleText': 'Get Notified',
-          'messageText': 'Enable Notification permission',
-          'followDeviceOrientation': true,
-          'positiveBtnText': 'Allow',
-          'negativeBtnText': 'Cancel',
-          'fallbackToSettings': true
-        };
-        CleverTapPlugin.promptPushPrimer(pushPrimerJSON);
-        showToast("Alert Push Primer");
-      } else {
-        print("Push Permission is already enabled.");
-      }
-    });
-  }
-
-  void syncVariables() {
-    CleverTapPlugin.syncVariables();
-    showToast("Sync Variables");
-    print("PE -> Sync Variables");
-  }
-
-  void fetchVariables() {
-    showToast("Fetch Variables");
-    this.setState(() async {
-      bool? success = await CleverTapPlugin.fetchVariables();
-      print("PE -> fetchVariables result: " + success.toString());
-    });
-  }
-
-  void defineVariables() {
-    var variables = {
-              'flutter_var_string': 'flutter_var_string_value',
-              'flutter_var_map': {
-                'flutter_var_map_string': 'flutter_var_map_value'
-              },
-              'flutter_var_int': 6,
-              'flutter_var_float': 6.9,
-              'flutter_var_boolean': true
-            };
-    CleverTapPlugin.defineVariables(variables);
-    showToast("Define Variables");
-    print("PE -> Define Variables: " + variables.toString());
-  }
-
-  void getVariables() {
-    showToast("Get Variables");
-    this.setState(() async {
-      Map<Object?, Object?> variables = await CleverTapPlugin.getVariables();
-      print('PE -> getVariables: ' + variables.toString());
-    });
-  }
-
-  void getVariable() {
-    showToast("Get Variable");
-    this.setState(() async {
-      var variable = await CleverTapPlugin.getVariable('flutter_var_string');
-      print('PE -> variable value for key \'flutter_var_string\': ' + variable.toString());
-    });
-  }
-
-  void onVariablesChanged() {
-    showToast("onVariablesChanged");
-      CleverTapPlugin.onVariablesChanged((variables) {
-        print("PE -> onVariablesChanged: " + variables.toString());
-      });
-  }
-
-  void onValueChanged() {
-    showToast("onValueChanged");
-      CleverTapPlugin.onValueChanged('flutter_var_string', (variable) {
-        print("PE -> onValueChanged: " + variable.toString());
-      });
-  }
-
-  void handleDeeplink(Map<String, dynamic> notificationPayload) {
-    var type = notificationPayload["type"];
-    var title = notificationPayload["nt"];
-    var message = notificationPayload["nm"];
-
-    if (type != null) {
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) =>
-                  DeepLinkPage(type: type, title: title, message: message)));
-    }
-
-    print(
-        "_handleKilledStateNotificationInteraction => Type: $type, Title: $title, Message: $message ");
   }
 }

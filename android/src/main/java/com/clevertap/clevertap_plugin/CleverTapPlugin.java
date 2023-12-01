@@ -1,12 +1,7 @@
 package com.clevertap.clevertap_plugin;
 
-import static com.clevertap.clevertap_plugin.Constants.CALLBACK_HANDLE;
-import static com.clevertap.clevertap_plugin.Constants.DISPATCHER_HANDLE;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,44 +10,25 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-
+import com.clevertap.android.sdk.CTExperimentsListener;
 import com.clevertap.android.sdk.CTFeatureFlagsListener;
 import com.clevertap.android.sdk.CTInboxListener;
+import com.clevertap.android.sdk.CTInboxMessage;
 import com.clevertap.android.sdk.CTInboxStyleConfig;
 import com.clevertap.android.sdk.CleverTapAPI;
+import com.clevertap.android.sdk.CTEventNotifier;
+import com.clevertap.android.sdk.EventDetail;
 import com.clevertap.android.sdk.InAppNotificationButtonListener;
 import com.clevertap.android.sdk.InAppNotificationListener;
 import com.clevertap.android.sdk.InboxMessageButtonListener;
-import com.clevertap.android.sdk.InboxMessageListener;
-import com.clevertap.android.sdk.PushPermissionResponseListener;
 import com.clevertap.android.sdk.SyncListener;
 import com.clevertap.android.sdk.UTMDetail;
 import com.clevertap.android.sdk.displayunits.DisplayUnitListener;
 import com.clevertap.android.sdk.displayunits.model.CleverTapDisplayUnit;
-import com.clevertap.android.sdk.events.EventDetail;
-import com.clevertap.android.sdk.inapp.CTInAppNotification;
-import com.clevertap.android.sdk.inbox.CTInboxMessage;
-import com.clevertap.android.sdk.interfaces.OnInitCleverTapIDListener;
 import com.clevertap.android.sdk.product_config.CTProductConfigListener;
 import com.clevertap.android.sdk.pushnotification.CTPushNotificationListener;
 import com.clevertap.android.sdk.pushnotification.PushConstants.PushType;
-import com.clevertap.android.sdk.pushnotification.PushNotificationHandler;
 import com.clevertap.android.sdk.pushnotification.amp.CTPushAmpListener;
-import com.clevertap.android.sdk.variables.Var;
-import com.clevertap.android.sdk.variables.callbacks.FetchVariablesCallback;
-import com.clevertap.android.sdk.variables.callbacks.VariableCallback;
-import com.clevertap.android.sdk.variables.callbacks.VariablesChangedCallback;
-import com.clevertap.clevertap_plugin.CleverTapTypeUtils.LongUtil;
-import com.clevertap.clevertap_plugin.isolate.IsolateHandlePreferences;
-import com.clevertap.android.sdk.CTEventNotifier;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -62,6 +38,12 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * CleverTapPlugin
@@ -70,10 +52,10 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 public class CleverTapPlugin implements ActivityAware,
         FlutterPlugin, MethodCallHandler,
         SyncListener, InAppNotificationListener, CTInboxListener,
-        InAppNotificationButtonListener, InboxMessageListener,
+        InAppNotificationButtonListener,
         InboxMessageButtonListener, DisplayUnitListener,
         CTFeatureFlagsListener, CTProductConfigListener,
-        CTPushAmpListener, CTPushNotificationListener, PushPermissionResponseListener {
+        CTPushAmpListener, CTPushNotificationListener {
 
     private static final String TAG = "CleverTapPlugin";
 
@@ -91,15 +73,11 @@ public class CleverTapPlugin implements ActivityAware,
 
     private Activity activity;
 
-    private MethodChannel dartToNativeMethodChannel;
-
-    private static MethodChannel nativeToDartMethodChannel;
+    private MethodChannel channel;
 
     private CleverTapAPI cleverTapAPI;
 
     private Context context;
-
-    public static Map<String, Object> variables = new HashMap<>();
 
     /**
      * Plugin registration.
@@ -107,7 +85,6 @@ public class CleverTapPlugin implements ActivityAware,
     public static void registerWith(Registrar registrar) {
         CleverTapPlugin plugin = new CleverTapPlugin();
         plugin.setupPlugin(registrar.context(), null, registrar);
-        plugin.activity = ((Activity) registrar.activeContext());
     }
 
     public CleverTapPlugin() {
@@ -117,13 +94,6 @@ public class CleverTapPlugin implements ActivityAware,
     public boolean beforeShow(Map<String, Object> extras) {
         invokeMethodOnUiThread("beforeShow", extras);
         return true;
-    }
-
-    @SuppressLint("RestrictedApi")
-    @Override
-    public void onShow(CTInAppNotification ctInAppNotification) {
-        invokeMethodOnUiThread("inAppNotificationShow",
-                Utils.jsonToMap(ctInAppNotification.getJsonDescription()));
     }
 
     @Override
@@ -168,9 +138,7 @@ public class CleverTapPlugin implements ActivityAware,
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        dartToNativeMethodChannel = null;
-        nativeToDartMethodChannel = null;
-        context = null;
+        channel = null;
     }
 
     @Override
@@ -202,15 +170,6 @@ public class CleverTapPlugin implements ActivityAware,
     }
 
     @Override
-    public void onInboxItemClicked(CTInboxMessage message, int contentPageIndex, int buttonIndex) {
-        Map<String, Object> payloadMap = new HashMap<>();
-        payloadMap.put("data", Utils.jsonToMap(message.getData()));
-        payloadMap.put("contentPageIndex", contentPageIndex);
-        payloadMap.put("buttonIndex", buttonIndex);
-        invokeMethodOnUiThread("onInboxMessageClick", payloadMap);
-    }
-
-    @Override
     public void onInit() {
         invokeMethodOnUiThread("productConfigInitialized", "");
     }
@@ -219,30 +178,10 @@ public class CleverTapPlugin implements ActivityAware,
     @Override
     public void onMethodCall(MethodCall call, @NonNull Result result) {
         switch (call.method) {
-            case "getAppLaunchNotification": {
-                getAppLaunchNotification(result);
-                break;
-            }
-            case "setLibrary": {
-                setLibrary(call, result);
-                break;
-            }
             case "setDebugLevel": {
                 int debugLevelValue = call.argument("debugLevel");
                 CleverTapAPI.setDebugLevel(debugLevelValue);
                 result.success(null);
-                break;
-            }
-            case "registerKilledStateNotificationClickedHandler": {
-                Long dispatcherHandle = LongUtil.parseLong(call.argument(DISPATCHER_HANDLE));
-                Long callbackHandle = LongUtil.parseLong(call.argument(CALLBACK_HANDLE));
-                if (dispatcherHandle != null && callbackHandle != null) {
-                    IsolateHandlePreferences.saveCallbackKeys(context, dispatcherHandle, callbackHandle);
-                }
-                break;
-            }
-            case "setLocale": {
-                setLocale(call, result);
                 break;
             }
             // Push Methods
@@ -251,7 +190,7 @@ public class CleverTapPlugin implements ActivityAware,
                 break;
             }
             case "createNotification": {
-                renderNotification(call, result);
+                createNotification(call, result);
                 break;
             }
             case "processPushNotification": {
@@ -299,7 +238,7 @@ public class CleverTapPlugin implements ActivityAware,
                     String channelId = call.argument("channelId");
                     CleverTapAPI.deleteNotificationChannel(context, channelId);
                     result.success(null);
-                } else {
+                }else{
                     result.error(TAG, ANDROID_O_DELETE_NOTIFICATION_ERROR_MSG, null);
                 }
                 break;
@@ -309,32 +248,11 @@ public class CleverTapPlugin implements ActivityAware,
                     String groupId = call.argument("groupId");
                     CleverTapAPI.deleteNotificationChannelGroup(context, groupId);
                     result.success(null);
-                } else {
+                }else{
                     result.error(TAG, ANDROID_O_DELETE_NOTIFICATION_ERROR_MSG, null);
                 }
                 break;
             }
-            //Android 13 push primer methods
-            case "promptPushPrimer": {
-                promptPushPrimer(call, result);
-                break;
-            }
-
-            case "promptForPushNotification": {
-                promptForPushNotification(call, result);
-                break;
-            }
-
-            case "getPushNotificationPermissionStatus": {
-                getPushNotificationPermissionStatus(result);
-                break;
-            }
-
-            case "unregisterPushPermissionNotificationResponseListener": {
-                unregisterPushPermissionNotificationResponseListener(result);
-                break;
-            }
-
             //Enables tracking opt out for the currently active user.
             case "setOptOut": {
                 setOptOut(call, result);
@@ -359,12 +277,6 @@ public class CleverTapPlugin implements ActivityAware,
                 setPersonalization(result, false);
                 break;
             }
-
-            case "setCommonEventData": {
-                setCommonEventData(call, result);
-                break;
-            }
-
             // Event API
             case "recordScreenView": {
                 recordScreenView(call, result);
@@ -374,7 +286,6 @@ public class CleverTapPlugin implements ActivityAware,
                 recordEvent(call, result);
                 break;
             }
-
             case "recordChargedEvent": {
                 recordChargedEvent(call, result);
                 break;
@@ -420,10 +331,6 @@ public class CleverTapPlugin implements ActivityAware,
                 profileGetCleverTapID(result);
                 break;
             }
-            case "getCleverTapID": {
-                getCleverTapID(result);
-                break;
-            }
             case "onUserLogin": {
                 onUserLogin(call, result);
                 break;
@@ -446,14 +353,6 @@ public class CleverTapPlugin implements ActivityAware,
             }
             case "profileAddMultiValue": {
                 profileAddMultiValue(call, result);
-                break;
-            }
-            case "profileIncrementValue": {
-                profileIncrementValue(call, result);
-                break;
-            }
-            case "profileDecrementValue": {
-                profileDecrementValue(call, result);
                 break;
             }
             case "profileAddMultiValues": {
@@ -493,19 +392,6 @@ public class CleverTapPlugin implements ActivityAware,
                 sessionGetUTMDetails(result);
                 break;
             }
-            //In App controls Methods
-            case "suspendInAppNotifications": {
-                suspendInAppNotifications(result);
-                break;
-            }
-            case "discardInAppNotifications": {
-                discardInAppNotifications(result);
-                break;
-            }
-            case "resumeInAppNotifications": {
-                resumeInAppNotifications(result);
-                break;
-            }
             //App Inbox Methods
             case "initializeInbox": {
                 initializeInbox(result);
@@ -513,10 +399,6 @@ public class CleverTapPlugin implements ActivityAware,
             }
             case "showInbox": {
                 showInbox(call, result);
-                break;
-            }
-            case "dismissInbox": {
-                dismissInbox(result);
                 break;
             }
             case "getInboxMessageCount": {
@@ -547,18 +429,8 @@ public class CleverTapPlugin implements ActivityAware,
                 break;
             }
 
-            case "deleteInboxMessagesForIds": {
-                deleteInboxMessagesForIds(call, result);
-                break;
-            }
-
             case "markReadInboxMessageForId": {
                 markReadInboxMessageForId(call, result);
-                break;
-            }
-
-            case "markReadInboxMessagesForIds": {
-                markReadInboxMessagesForIds(call, result);
                 break;
             }
 
@@ -569,47 +441,6 @@ public class CleverTapPlugin implements ActivityAware,
 
             case "pushInboxNotificationViewedEventForId": {
                 pushInboxNotificationViewedEventForId(call, result);
-                break;
-            }
-
-            case "syncVariables": {
-                syncVariables(result);
-                break;
-            }
-
-            //no-op for android, methods only for iOS.
-            case "syncVariablesinProd": {
-                Log.d(TAG, "syncVariablesinProd" + ERROR_IOS);
-                break;
-            }
-
-            case "defineVariables": {
-                defineVariables(call, result);
-                break;
-            }
-
-            case "fetchVariables": {
-                fetchVariables(result);
-                break;
-            }
-
-            case "getVariable": {
-                getVariable(call, result);
-                break;
-            }
-
-            case "getVariables": {
-                getVariables(result);
-                break;
-            }
-
-            case "onVariablesChanged": {
-                onVariablesChanged();
-                break;
-            }
-
-            case "onValueChanged": {
-                onValueChanged(call);
                 break;
             }
 
@@ -704,221 +535,15 @@ public class CleverTapPlugin implements ActivityAware,
                 Log.d(TAG, "getInitialUrl" + ERROR_IOS);
                 break;
             }
-
             case "performLogout": {
                 resetUser(result);
                 break;
             }
-
-            case "deferEventsUntilProfileAndDeviceIsLoaded": {
-                deferEventsUntilProfileAndDeviceIsLoaded(call, result);
-                break;
-            }
-
-            case "setDeviceId": {
-                setDeviceId(call, result);
-                break;
-            }
-
             default: {
                 result.notImplemented();
             }
         }
 
-    }
-
-    private void setLocale(MethodCall call, Result result) {
-        String locale = call.arguments();
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.setLocale(locale);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    /**************************************************
-     *  Product Experience Remote Config methods starts
-     *************************************************/
-    private void syncVariables(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.syncVariables();
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    public void defineVariables(MethodCall call, Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            Map<String, Object> variablesMap = call.argument("variables");
-            for (Map.Entry<String, Object> entry : variablesMap.entrySet()) {
-                String key = entry.getKey();
-                Object value = entry.getValue();
-                variables.put(key, cleverTapAPI.defineVariable(key, value));
-            }
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    public void fetchVariables(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.fetchVariables(new FetchVariablesCallback() {
-                @Override
-                public void onVariablesFetched(final boolean isSuccess) {
-                    result.success(isSuccess);
-                }
-            });
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    public void getVariable(MethodCall call, Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            try {
-                String key = call.argument("name");
-                result.success(getVariableValue(key));
-            } catch (Exception e) {
-                result.error(TAG, "Unable to get the variable value: " + e.getLocalizedMessage(), null);
-            }
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    public void getVariables(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            try {
-                result.success(getVariablesValues());
-            } catch (Exception e) {
-                result.error(TAG, "Unable to get the variable value: " + e.getLocalizedMessage(), null);
-            }
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    public void onVariablesChanged() {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.addVariablesChangedCallback(new VariablesChangedCallback() {
-                @Override
-                public void variablesChanged() {
-                    invokeMethodOnUiThread("onVariablesChanged", getVariablesValues());
-                }
-            });
-        } else {
-            Log.d(TAG, ERROR_MSG);
-        }
-    }
-
-    public void onValueChanged(MethodCall call) {
-        String name = call.argument("name");
-        if (variables.containsKey(name)) {
-
-            Var<Object> var = (Var<Object>) variables.get(name);
-            if (var != null) {
-                var.addValueChangedCallback(new VariableCallback<Object>() {
-                    @SuppressLint("RestrictedApi")
-                    @Override
-                    public void onValueChanged(final Var<Object> variable) {
-                        Map<String, Object> variablesMap = new HashMap<>();
-                        try {
-                            variablesMap = getVariableValueAsMap(name);
-                        } catch (Exception e) {
-                            Log.d(TAG, "Unable to handle onValueChanged callback: " + e.getLocalizedMessage(), null);
-                        }
-                        invokeMethodOnUiThread("onValueChanged", variablesMap);
-                    }
-                });
-            } else {
-                String errorMessage = "Variable value with name = " + name + " contains null value. Not setting onValueChanged callback.";
-                Log.d(TAG, errorMessage);
-            }
-        } else {
-            String errorMessage = "Variable name = " + name + " does not exist. Make sure you set variable first.";
-            Log.e(TAG, errorMessage);
-        }
-    }
-
-    /************************************************
-     *  Product Experience Remote Config methods ends
-     ************************************************/
-
-    @SuppressLint("RestrictedApi")
-    private Object getVariableValue(String name) {
-        if (variables.containsKey(name)) {
-            Var<?> variable = (Var<?>) variables.get(name);
-            return variable.value();
-        }
-        throw new IllegalArgumentException(
-                "Variable name = " + name + " does not exist. Make sure you set variable first.");
-    }
-
-    private Map<String, Object> getVariablesValues() {
-        Map<String, Object> variablesMapObject = new HashMap<>();
-        for (Map.Entry<String, Object> entry : variables.entrySet()) {
-            String key = entry.getKey();
-            Var<?> variable = (Var<?>) entry.getValue();
-
-            Map<String, Object> variableWritableMap = CleverTapTypeUtils.MapUtil.addValue(key, variable.value());
-            variablesMapObject.putAll(variableWritableMap);
-        }
-        return variablesMapObject;
-    }
-
-    @SuppressLint("RestrictedApi")
-    private Map<String, Object> getVariableValueAsMap(String name) {
-        if (variables.containsKey(name)) {
-            Var<?> variable = (Var<?>) variables.get(name);
-            return CleverTapTypeUtils.MapUtil.addValue(name, variable.value());
-        }
-        throw new IllegalArgumentException(
-                "Variable name = " + name + " does not exist.");
-    }
-
-    /**
-     * Returns the notification payload as a Map if the application is opened from a terminated (killed) state.
-     * It determines whether the app is launched from a notification click rendered by the CleverTap SDK.
-     * If so, it adds a {@code notificationLaunchedApp} flag with a value of true to the result map; otherwise,
-     * the flag remains false.
-     *
-     * @param result The result object used for communicating the launch notification data.
-     */
-    private void getAppLaunchNotification(Result result) {
-        Map<String, Object> appLaunchNotificationMap = new HashMap<>();
-        boolean notificationLaunchedApp = false;
-
-        if(activity != null) {
-            Intent launchIntent = activity.getIntent();
-            if (launchIntent != null) {
-                Bundle intentExtras = launchIntent.getExtras();
-                // notificationLaunchedApp is true when intentExtras is non-null and app is launched from a
-                // notification click which was rendered by the CleverTap SDK.
-                notificationLaunchedApp = intentExtras != null &&
-                        intentExtras.containsKey("wzrk_pn") && intentExtras.containsKey("nm");
-                if (notificationLaunchedApp) {
-                    Map notificationPayload = Utils.bundleToMap(intentExtras);
-                    appLaunchNotificationMap.put("notificationPayload", notificationPayload);
-                }
-            }
-        }
-        appLaunchNotificationMap.put("notificationLaunchedApp", notificationLaunchedApp);
-        result.success(appLaunchNotificationMap);
-    }
-
-    @SuppressLint("RestrictedApi")
-    private void setLibrary(MethodCall call, Result result) {
-        String libName = call.argument("libName");
-        int libVersion = call.argument("libVersion");
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.setCustomSdkVersion(libName, libVersion);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
     }
 
     @Override
@@ -938,17 +563,12 @@ public class CleverTapPlugin implements ActivityAware,
 
     @Override
     public void profileDataUpdated(JSONObject updates) {
-        invokeMethodOnUiThread("profileDataUpdated", Utils.jsonToMap(updates));
+        invokeMethodOnUiThread("profileDataUpdated", Utils.jsonObjectToMap(updates));
     }
 
     @Override
     public void profileDidInitialize(String CleverTapID) {
         invokeMethodOnUiThread("profileDidInitialize", CleverTapID);
-    }
-
-    @Override
-    public void onPushPermissionResponse(boolean accepted) {
-        invokeMethodOnUiThread("pushPermissionResponseReceived", accepted);
     }
 
     private void activate(Result result) {
@@ -960,29 +580,17 @@ public class CleverTapPlugin implements ActivityAware,
         }
     }
 
-    /**
-     * Renders both core and push template notifications and also handles the signedcall push
-     */
-    private void renderNotification(MethodCall call, Result result) {
+    private void createNotification(MethodCall call, Result result) {
         String extras = call.argument("extras");
         if (isCleverTapNotNull(cleverTapAPI)) {
-            boolean isSuccess;
             try {
-                Log.d(TAG, "renderNotification Android");
-                Bundle messageBundle = Utils.stringToBundle(extras);
-                isSuccess = PushNotificationHandler.getPushNotificationHandler()
-                        .onMessageReceived(context, messageBundle, PushType.FCM.toString());
-                if (isSuccess) {
-                    result.success(null);
-                } else {
-                    throw new Exception("Unable to process notification rendering");
-                }
+                Log.d(TAG, "createNotification Android");
+                CleverTapAPI.createNotification(context, Utils.stringToBundle(extras));
             } catch (JSONException e) {
                 result.error(TAG, "Unable to render notification due to JSONException - " + e.getLocalizedMessage(),
                         null);
-            } catch (Exception e) {
-                result.error(TAG, e.getLocalizedMessage(), null);
             }
+            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1004,7 +612,7 @@ public class CleverTapPlugin implements ActivityAware,
             String groupName = call.argument("groupName");
             CleverTapAPI.createNotificationChannelGroup(context, groupId, groupName);
             result.success(null);
-        } else {
+        }else{
             result.error(TAG, ANDROID_O_CREATE_CHANNEL_ERROR_MSG, null);
         }
     }
@@ -1020,7 +628,7 @@ public class CleverTapPlugin implements ActivityAware,
                     call.argument("groupId"),
                     showBadge);
             result.success(null);
-        } else {
+        }else{
             result.error(TAG, ANDROID_O_CREATE_CHANNEL_ERROR_MSG, null);
         }
     }
@@ -1036,7 +644,7 @@ public class CleverTapPlugin implements ActivityAware,
                     call.argument("showBadge"),
                     call.argument("sound"));
             result.success(null);
-        } else {
+        }else{
             result.error(TAG, ANDROID_O_CREATE_CHANNEL_ERROR_MSG, null);
         }
     }
@@ -1052,46 +660,8 @@ public class CleverTapPlugin implements ActivityAware,
                     call.argument("showBadge"),
                     sound);
             result.success(null);
-        } else {
+        }else{
             result.error(TAG, ANDROID_O_CREATE_CHANNEL_ERROR_MSG, null);
-        }
-    }
-
-    private void promptPushPrimer(MethodCall call, Result result) {
-        Map<String, Object> localInAppAttributeMap = call.arguments();
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            JSONObject jsonObject = Utils.localInAppFromMap(localInAppAttributeMap);
-            cleverTapAPI.promptPushPrimer(jsonObject);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void promptForPushNotification(MethodCall call, Result result) {
-        boolean fallbackToSettings = call.arguments();
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.promptForPushPermission(fallbackToSettings);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void getPushNotificationPermissionStatus(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            result.success(cleverTapAPI.isPushPermissionGranted());
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void unregisterPushPermissionNotificationResponseListener(Result result){
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.unregisterPushPermissionNotificationResponseListener(this);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
         }
     }
 
@@ -1109,45 +679,10 @@ public class CleverTapPlugin implements ActivityAware,
         }
     }
 
-    public void deleteInboxMessagesForIds(MethodCall call, Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            ArrayList<String> messageIds = call.argument("messageIds");
-            cleverTapAPI.deleteInboxMessagesForIDs(messageIds);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void markReadInboxMessageForId(MethodCall call, Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            String messageId = call.argument("messageId");
-            if (messageId == null || messageId.isEmpty()) {
-                result.error(TAG, ERROR_MSG_ID, null);
-                return;
-            }
-            cleverTapAPI.markReadInboxMessage(messageId);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    public void markReadInboxMessagesForIds(MethodCall call, Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            ArrayList<String> messageIds = call.argument("messageIds");
-            cleverTapAPI.markReadInboxMessagesForIDs(messageIds);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
     private void enableDeviceNetworkInfoReporting(MethodCall call, Result result) {
         boolean value = call.argument("value");
         if (isCleverTapNotNull(cleverTapAPI)) {
             cleverTapAPI.enableDeviceNetworkInfoReporting(value);
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1249,7 +784,7 @@ public class CleverTapPlugin implements ActivityAware,
             if (cleverTapAPI.getDisplayUnitForId(unitId) != null) {
                 JSONObject displayUnit = cleverTapAPI.getDisplayUnitForId(unitId).getJsonObject();
                 if (displayUnit != null) {
-                    result.success(Utils.jsonToMap(displayUnit));
+                    result.success(Utils.jsonObjectToMap(displayUnit));
                 }
             } else {
                 result.error(TAG, "Display Unit is NULL", null);
@@ -1303,7 +838,7 @@ public class CleverTapPlugin implements ActivityAware,
             }
             CTInboxMessage inboxMessage = cleverTapAPI.getInboxMessageForId(messageId);
             if (inboxMessage != null) {
-                result.success(Utils.jsonToMap(inboxMessage.getData()));
+                result.success(Utils.jsonObjectToMap(inboxMessage.getData()));
             }
         } else {
             result.error(TAG, ERROR_MSG, null);
@@ -1352,33 +887,6 @@ public class CleverTapPlugin implements ActivityAware,
         }
     }
 
-    private void suspendInAppNotifications(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.suspendInAppNotifications();
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void discardInAppNotifications(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.discardInAppNotifications();
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void resumeInAppNotifications(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.resumeInAppNotifications();
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
     private void initializeInbox(Result result) {
         if (isCleverTapNotNull(cleverTapAPI)) {
             cleverTapAPI.initializeInbox();
@@ -1389,7 +897,7 @@ public class CleverTapPlugin implements ActivityAware,
     }
 
     private void invokeMethodOnUiThread(final String methodName, final String cleverTapID) {
-        final MethodChannel channel = nativeToDartMethodChannel;
+        final MethodChannel channel = this.channel;
         if (channel == null) {
             Log.d(TAG, "methodChannel in invokeMethodOnUiThread(String) is null");
             return;
@@ -1403,20 +911,8 @@ public class CleverTapPlugin implements ActivityAware,
         });
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private void invokeMethodOnUiThread(final String methodName, final boolean params) {
-        final MethodChannel channel = nativeToDartMethodChannel;
-        if (channel == null) {
-            Log.d(TAG, "params in invokeMethodOnUiThread(boolean) is null");
-            return;
-        }
-        runOnMainThread(() -> {
-            channel.invokeMethod(methodName, params);
-        });
-    }
-
     private void invokeMethodOnUiThread(final String methodName, final Map map) {
-        final MethodChannel channel = nativeToDartMethodChannel;
+        final MethodChannel channel = this.channel;
         if (channel == null) {
             Log.d(TAG, "methodChannel in invokeMethodOnUiThread(Map) is null");
             return;
@@ -1426,7 +922,7 @@ public class CleverTapPlugin implements ActivityAware,
 
     @SuppressWarnings("SameParameterValue")
     private void invokeMethodOnUiThread(final String methodName, final ArrayList list) {
-        final MethodChannel channel = nativeToDartMethodChannel;
+        final MethodChannel channel = this.channel;
         if (channel == null) {
             Log.d(TAG, "methodChannel in invokeMethodOnUiThread(ArrayList) is null");
             return;
@@ -1436,6 +932,20 @@ public class CleverTapPlugin implements ActivityAware,
 
     private boolean isCleverTapNotNull(CleverTapAPI cleverTapAPI) {
         return cleverTapAPI != null;
+    }
+
+    private void markReadInboxMessageForId(MethodCall call, Result result) {
+        if (isCleverTapNotNull(cleverTapAPI)) {
+            String messageId = call.argument("messageId");
+            if (messageId == null || messageId.isEmpty()) {
+                result.error(TAG, ERROR_MSG_ID, null);
+                return;
+            }
+            cleverTapAPI.markReadInboxMessage(messageId);
+            result.success(null);
+        } else {
+            result.error(TAG, ERROR_MSG, null);
+        }
     }
 
     private void onUserLogin(MethodCall call, Result result) {
@@ -1449,10 +959,10 @@ public class CleverTapPlugin implements ActivityAware,
     }
 
     private void processPushNotification(MethodCall call, Result result) {
-        Map<String, Object> extras = call.argument("extras");
+        JSONObject extras = call.argument("extras");
         if (isCleverTapNotNull(cleverTapAPI)) {
             try {
-                CleverTapAPI.processPushNotification(context, Utils.jsonToBundle(new JSONObject(extras)));
+                CleverTapAPI.processPushNotification(context, Utils.jsonToBundle(extras));
             } catch (JSONException e) {
                 result.error(TAG, "Unable to render notification due to JSONException - " + e.getLocalizedMessage(),
                         null);
@@ -1468,28 +978,6 @@ public class CleverTapPlugin implements ActivityAware,
         String value = call.argument("value");
         if (isCleverTapNotNull(cleverTapAPI)) {
             cleverTapAPI.addMultiValueForKey(key, value);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void profileIncrementValue(MethodCall call, Result result) {
-        String key = call.argument("key");
-        Number value = call.argument("value");
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.incrementValue(key, value);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void profileDecrementValue(MethodCall call, Result result) {
-        String key = call.argument("key");
-        Number value = call.argument("value");
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.decrementValue(key, value);
             result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
@@ -1518,24 +1006,6 @@ public class CleverTapPlugin implements ActivityAware,
     private void profileGetCleverTapID(Result result) {
         if (isCleverTapNotNull(cleverTapAPI)) {
             result.success(cleverTapAPI.getCleverTapID());
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void getCleverTapID(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.getCleverTapID(new OnInitCleverTapIDListener() {
-                @Override
-                public void onInitCleverTapID(String cleverTapID) {
-                    runOnMainThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            result.success(cleverTapID);
-                        }
-                    });
-                }
-            });
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1668,7 +1138,6 @@ public class CleverTapPlugin implements ActivityAware,
         Bundle extras = Utils.mapToBundle(extrasMap);
         if (isCleverTapNotNull(cleverTapAPI)) {
             this.cleverTapAPI.pushNotificationClickedEvent(extras);
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1679,7 +1148,6 @@ public class CleverTapPlugin implements ActivityAware,
         Bundle extras = Utils.mapToBundle(extrasMap);
         if (isCleverTapNotNull(cleverTapAPI)) {
             this.cleverTapAPI.pushNotificationViewedEvent(extras);
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1690,7 +1158,6 @@ public class CleverTapPlugin implements ActivityAware,
         ArrayList<HashMap<String, Object>> items = call.argument("items");
         if (isCleverTapNotNull(cleverTapAPI)) {
             cleverTapAPI.pushChargedEvent(chargeDetails, items);
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1701,23 +1168,15 @@ public class CleverTapPlugin implements ActivityAware,
         String eventName = call.argument("eventName");
         if (isCleverTapNotNull(cleverTapAPI)) {
             this.cleverTapAPI.pushEvent(eventName, eventData);
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
-    }
-
-    private void setCommonEventData(MethodCall call, Result result) {
-        Map<String, Object> eventData = call.argument("eventData");
-        this.cleverTapAPI.setCommonEventData(eventData);
-        result.success(null);
     }
 
     private void recordScreenView(MethodCall call, Result result) {
         String name = call.argument("screenName");
         if (isCleverTapNotNull(cleverTapAPI)) {
             cleverTapAPI.recordScreen(name);
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1818,7 +1277,6 @@ public class CleverTapPlugin implements ActivityAware,
         boolean value = call.argument("value");
         if (isCleverTapNotNull(cleverTapAPI)) {
             cleverTapAPI.setOffline(value);
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1828,7 +1286,6 @@ public class CleverTapPlugin implements ActivityAware,
         boolean value = call.argument("value");
         if (isCleverTapNotNull(cleverTapAPI)) {
             cleverTapAPI.setOptOut(value);
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1841,7 +1298,6 @@ public class CleverTapPlugin implements ActivityAware,
             } else {
                 cleverTapAPI.disablePersonalization();
             }
-            result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
         }
@@ -1849,14 +1305,13 @@ public class CleverTapPlugin implements ActivityAware,
 
     private void setPushToken(MethodCall call, Result result, PushType type) {
         String token = call.argument("token");
-        String region = call.argument("region");
         if (isCleverTapNotNull(cleverTapAPI)) {
             switch (type.getType()) {
                 case "fcm":
                     cleverTapAPI.pushFcmRegistrationId(token, true);
                     break;
                 case "xps":
-                    cleverTapAPI.pushXiaomiRegistrationId(token, region, true);
+                    cleverTapAPI.pushXiaomiRegistrationId(token, true);
                     break;
                 case "hps":
                     cleverTapAPI.pushHuaweiRegistrationId(token, true);
@@ -1871,33 +1326,22 @@ public class CleverTapPlugin implements ActivityAware,
         }
     }
 
-    private MethodChannel getMethodChannel(String channelName, BinaryMessenger messenger, Registrar registrar) {
+    private void setupPlugin(Context context, BinaryMessenger messenger, Registrar registrar) {
         if (registrar != null) {
             //V1 setup
-            return new MethodChannel(registrar.messenger(), channelName);
+            this.channel = new MethodChannel(registrar.messenger(), "clevertap_plugin");
+            this.activity = ((Activity) registrar.activeContext());
         } else {
             //V2 setup
-            return new MethodChannel(messenger, channelName);
+            this.channel = new MethodChannel(messenger, "clevertap_plugin");
         }
-    }
-
-    private void setupPlugin(Context context, BinaryMessenger messenger, Registrar registrar) {
-        this.dartToNativeMethodChannel = getMethodChannel("clevertap_plugin/dart_to_native", messenger, registrar);
-        if (nativeToDartMethodChannel == null) {
-            // set nativeToDartMethodChannel channel once and it has to be static field
-            // as per https://github.com/firebase/flutterfire/issues/9689 because multiple
-            // instances of the CleverTap plugin can be created in case onBackgroundMessage handler
-            // of FCM plugin.
-            nativeToDartMethodChannel = getMethodChannel("clevertap_plugin/native_to_dart", messenger, registrar);
-        }
-        this.dartToNativeMethodChannel.setMethodCallHandler(this);
+        this.channel.setMethodCallHandler(this);
         this.context = context.getApplicationContext();
         this.cleverTapAPI = CleverTapAPI.getDefaultInstance(this.context);
         if (this.cleverTapAPI != null) {
             this.cleverTapAPI.setCTPushNotificationListener(this);
             this.cleverTapAPI.setCTNotificationInboxListener(this);
             this.cleverTapAPI.setInboxMessageButtonListener(this);
-            this.cleverTapAPI.setCTInboxMessageListener(this);
             this.cleverTapAPI.setInAppNotificationButtonListener(this);
             this.cleverTapAPI.setInAppNotificationListener(this);
             this.cleverTapAPI.setSyncListener(this);
@@ -1906,7 +1350,6 @@ public class CleverTapPlugin implements ActivityAware,
             this.cleverTapAPI.setCTProductConfigListener(this);
             this.cleverTapAPI.setCTPushAmpListener(this);
             this.cleverTapAPI.setLibrary("Flutter");
-            this.cleverTapAPI.registerPushPermissionNotificationResponseListener(this);
         }
     }
 
@@ -1917,15 +1360,6 @@ public class CleverTapPlugin implements ActivityAware,
         styleConfig = Utils.jsonToStyleConfig(styleConfigJson);
         if (isCleverTapNotNull(cleverTapAPI)) {
             cleverTapAPI.showAppInbox(styleConfig);
-            result.success(null);
-        } else {
-            result.error(TAG, ERROR_MSG, null);
-        }
-    }
-
-    private void dismissInbox(Result result) {
-        if (isCleverTapNotNull(cleverTapAPI)) {
-            cleverTapAPI.dismissAppInbox();
             result.success(null);
         } else {
             result.error(TAG, ERROR_MSG, null);
@@ -1944,19 +1378,4 @@ public class CleverTapPlugin implements ActivityAware,
             }
         });
     }
-
-    private void deferEventsUntilProfileAndDeviceIsLoaded(MethodCall call, Result result) {
-        boolean value = call.argument("value");
-        cleverTapAPI.deferClevertapEventsUntilProfileAndDeviceIsFetched(value);
-        result.success(null);
-    }
-
-    private void setDeviceId(MethodCall call, Result result) {
-        boolean trackingEnabled = call.argument("trackingEnabled");
-        String deviceId = call.argument("deviceId");
-        cleverTapAPI.setTrackingDeviceId(deviceId);
-        cleverTapAPI.setTrackingEnabled(trackingEnabled);
-        result.success(null);
-    }
-
 }

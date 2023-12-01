@@ -61,7 +61,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				49A81C5623D6FD0F006388A5 /* UserNotifications.framework in Frameworks */,
-				DE9F316D4885F9BE0CBD66EA /* libPods-Runner.a in Frameworks */,
+				28FD9BD97E071929CB4AE121 /* libPods-Runner.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
