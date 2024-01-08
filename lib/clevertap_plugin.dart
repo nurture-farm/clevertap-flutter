@@ -657,8 +657,8 @@ class CleverTapPlugin {
   ///  Then, use this method to switch between subsequent separate identified users.
   ///  <p>
   ///  Please note that switching from one identified user to another is a costly operation
-  ///  in that the current session for the previous user is automatically closed
-  ///  and data relating to the old user removed, and a new session is started
+  ///  in that the
+  ///  a new session is started
   ///  for the new user and data for that user refreshed via a network call to CleverTap.
   ///  In addition, any global frequency caps are reset as part of the switch.
   ///
@@ -667,6 +667,11 @@ class CleverTapPlugin {
   static Future<void> onUserLogin(Map<String, dynamic> profile) async {
     return await _dartToNativeMethodChannel
         .invokeMethod('onUserLogin', {'profile': profile});
+  }
+
+  ///Logout's user and removed all cached profile data.
+  static Future<void> performLogout() async {
+    return await _dartToNativeMethodChannel.invokeMethod('performLogout');
   }
 
   /// Push a profile update.
