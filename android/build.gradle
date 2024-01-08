@@ -46,7 +46,7 @@ dependencies {
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.github.nurture-farm.clevertap-android-sdk:clevertap-android-sdk:upgrade5.2.1-SNAPSHOT'
+    implementation 'com.github.nurture-farm.clevertap-android-sdk:clevertap-android-sdk:upgrade5.2.1-SNAPSHOT@aar'
     implementation 'androidx.fragment:fragment:1.1.0'
     implementation 'androidx.core:core:1.3.0'
 }
