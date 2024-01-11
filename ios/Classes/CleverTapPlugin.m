@@ -425,7 +425,11 @@ static NSDateFormatter *dateFormatter;
 
 - (void)performLogout:(FlutterMethodCall *)call withResult:(FlutterResult)result {
 
-    [[CleverTap sharedInstance] resetUser];
+    [[CleverTap sharedInstance] resetUser:^{
+        result(nil);
+    } onFailure: ^(NSError *error){
+        result([FlutterError errorWithCode:@"Error" message:@"" details:nil]);
+    }];
     result(nil);
 }
 
