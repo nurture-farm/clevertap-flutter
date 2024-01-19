@@ -13,7 +13,7 @@ The CleverTap Flutter SDK for Mobile Customer Engagement and Analytics solutions
 
 For more information check out our [website](https://clevertap.com/ "CleverTap")  and  [documentation](https://developer.clevertap.com/docs/ "CleverTap Technical Documentation").
 
-To get started, sign up [here](https://clevertap.com/live-product-demo/)
+To get started, sign up [here](https://clevertap.com/live-product-demo/).
 
 ## 🚀 Installation and Quick Start
 
@@ -21,7 +21,7 @@ To get started, sign up [here](https://clevertap.com/live-product-demo/)
 
 ```yaml
 dependencies:
-clevertap_plugin: 1.2.3
+clevertap_plugin: 2.0.0
 ```
 
 - Run `flutter packages get` to install the SDK
@@ -36,8 +36,14 @@ See our [Technical Documentation for Android](doc/Integrate-Android.md) and [Tec
 
 ## 📑 Documentation & Example
 
-- Checkout our [CleverTap Flutter Usage docs](doc/Usage.md)
-- Checkout our [Example Dart project](/example)
+- Checkout our [CleverTap Flutter Usage documentation](doc/Usage.md)
+- Checkout our [Example Dart project](./example)
+
+## 📲 CleverTap Push Templates SDK (Available only for Android OS)
+[(Back to top)](#-table-of-contents)
+
+CleverTap Push Templates SDK helps you engage with your users using fancy push notification templates built specifically to work with [CleverTap](https://www.clevertap.com).
+Find the integration steps for the CleverTap Push Templates SDK [here](https://github.com/CleverTap/clevertap-android-sdk/blob/master/docs/CTPUSHTEMPLATES.md)
 
 Add the following to your `dependencies` section in `app/build.gradle`
 ```groovy
@@ -154,7 +160,7 @@ After installation, you will need to integrate CleverTap SDK into your app.
 
 ## 🆕 Changelog
 
-Refer to the [CleverTap Flutter SDK Change Log](/CHANGELOG.md).
+Refer to the [CleverTap Flutter SDK Change Log](./CHANGELOG.md).
 
 ## ❓Questions
 
