@@ -674,10 +674,22 @@ class CleverTapPlugin {
     return await _dartToNativeMethodChannel.invokeMethod('performLogout');
   }
 
+  static Future<void> deferEventsUntilProfileAndDeviceIsLoaded(bool value) async {
+    return await _dartToNativeMethodChannel.invokeMethod('deferEventsUntilProfileAndDeviceIsLoaded', {'value': value});
+  }
+
   /// Push a profile update.
   static Future<void> profileSet(Map<String, dynamic> profile) async {
     return await _dartToNativeMethodChannel
         .invokeMethod('profileSet', {'profile': profile});
+  }
+
+
+  static Future<void> setDeviceId(String deviceId,bool trackingEnabled) async {
+    return _dartToNativeMethodChannel.invokeMethod('setDeviceId', {
+      'deviceId': deviceId,
+      'trackingEnabled': trackingEnabled,
+    });
   }
 
   ///Remove the user profile property value specified by key from the user profile

@@ -539,6 +539,18 @@ public class CleverTapPlugin implements ActivityAware,
                 resetUser(result);
                 break;
             }
+            case "setCommonEventData": {
+                setCommonEventData(call, result);
+                break;
+            }
+            case "deferEventsUntilProfileAndDeviceIsLoaded": {
+                deferEventsUntilProfileAndDeviceIsLoaded(call, result);
+                break;
+            }
+            case "setDeviceId": {
+                setDeviceId(call, result);
+                break;
+            }
             default: {
                 result.notImplemented();
             }
@@ -1377,5 +1389,25 @@ public class CleverTapPlugin implements ActivityAware,
                 result.error(TAG, "", null);
             }
         });
+    }
+
+    private void setCommonEventData(MethodCall call, Result result) {
+        Map<String, Object> eventData = call.argument("eventData");
+        cleverTapAPI.setCommonEventData(eventData);
+        result.success(null);
+    }
+
+    private void deferEventsUntilProfileAndDeviceIsLoaded(MethodCall call, Result result) {
+        boolean value = call.argument("value");
+        cleverTapAPI.deferClevertapEventsUntilProfileAndDeviceIsFetched(value);
+        result.success(null);
+    }
+
+    private void setDeviceId(MethodCall call, Result result) {
+        boolean trackingEnabled = call.argument("trackingEnabled");
+        String deviceId = call.argument("deviceId");
+        cleverTapAPI.setTrackingDeviceId(deviceId);
+        cleverTapAPI.setTrackingEnabled(trackingEnabled);
+        result.success(null);
     }
 }
