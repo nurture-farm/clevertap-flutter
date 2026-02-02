@@ -37,7 +37,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,13 +78,7 @@ public class CleverTapPlugin implements ActivityAware,
 
     private Context context;
 
-    /**
-     * Plugin registration.
-     */
-    public static void registerWith(Registrar registrar) {
-        CleverTapPlugin plugin = new CleverTapPlugin();
-        plugin.setupPlugin(registrar.context(), null, registrar);
-    }
+
 
     public CleverTapPlugin() {
     }
@@ -123,9 +116,8 @@ public class CleverTapPlugin implements ActivityAware,
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-        setupPlugin(binding.getApplicationContext(), binding.getBinaryMessenger(), null);
+        setupPlugin(binding.getApplicationContext(), binding.getBinaryMessenger());
     }
-
     @Override
     public void onDetachedFromActivity() {
         activity = null;
@@ -1326,15 +1318,8 @@ public class CleverTapPlugin implements ActivityAware,
         }
     }
 
-    private void setupPlugin(Context context, BinaryMessenger messenger, Registrar registrar) {
-        if (registrar != null) {
-            //V1 setup
-            this.channel = new MethodChannel(registrar.messenger(), "clevertap_plugin");
-            this.activity = ((Activity) registrar.activeContext());
-        } else {
-            //V2 setup
-            this.channel = new MethodChannel(messenger, "clevertap_plugin");
-        }
+    private void setupPlugin(Context context, BinaryMessenger messenger) {
+        this.channel = new MethodChannel(messenger, "clevertap_plugin");
         this.channel.setMethodCallHandler(this);
         this.context = context.getApplicationContext();
         this.cleverTapAPI = CleverTapAPI.getDefaultInstance(this.context);
